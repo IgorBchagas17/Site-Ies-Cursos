@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, BarChart, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart, AlertTriangle, Camera } from "lucide-react";
 
 const menuItems = [
   {
@@ -17,7 +17,12 @@ const menuItems = [
     icon: BarChart,
     to: "/ies-admin/leads",
   },
-    { 
+  {
+    label: "Momentos",
+    icon: Camera,
+    to: "/ies-admin/moments"
+  },
+  { 
     label: ".Log",
     icon: AlertTriangle,
     to: "/ies-admin/auditoria",

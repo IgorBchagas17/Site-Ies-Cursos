@@ -1,43 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Send, MessageCircle, Loader2 } from 'lucide-react';
-// REMOVIDA A IMPORTAÇÃO DE 'courses' LOCAL
-import { motion } from 'framer-motion';
-import { leadService } from '../services/leadService'; 
-import { courseService } from '../services/courseService'; 
-import { Course } from '../types'; 
-import { toast } from 'sonner'; 
-import DOMPurify from 'dompurify'; // Necessário para a sanitização de dados
+import { Send, MessageCircle, Loader2, MapPin, Phone, Mail } from 'lucide-react';
+import { leadService } from '../services/leadService';
+import { courseService } from '../services/courseService';
+import { Course } from '../types';
+import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 
-// --- FUNÇÃO DE SANITIZAÇÃO ---
+// Sanitização
 function sanitizeInput(dirtyString: string): string {
-    // Sanitiza a string, removendo códigos maliciosos (XSS)
     return DOMPurify.sanitize(dirtyString);
 }
-// ----------------------------
 
 export function Contact() {
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
-        whatsapp: '',
+        whatsapp: true, // <--- CORRIGIDO (boolean)
         course: '',
         contactTime: ''
     });
-    
-    const [loading, setLoading] = useState(false); 
-    const [allCourses, setAllCourses] = useState<Course[]>([]); 
-    const [loadingCourses, setLoadingCourses] = useState(true); 
 
-    // EFEITO: Carrega a lista de cursos ativos para o seletor
+    const [loading, setLoading] = useState(false);
+    const [allCourses, setAllCourses] = useState<Course[]>([]);
+    const [loadingCourses, setLoadingCourses] = useState(true);
+
+    // Carregar cursos
     useEffect(() => {
         const fetchCourses = async () => {
             try {
-                // Busca cursos do Supabase (via courseService.getAll, que chama a API pública)
-                const coursesData = await courseService.getAll(); 
+                const coursesData = await courseService.getAll();
                 setAllCourses(coursesData);
             } catch (error) {
-                console.error("Erro ao carregar lista de cursos:", error);
-                toast.error("Erro ao carregar cursos. Tente novamente mais tarde.");
+                console.error("Erro ao carregar cursos:", error);
+                setAllCourses([]);
             } finally {
                 setLoadingCourses(false);
             }
@@ -45,265 +40,201 @@ export function Contact() {
         fetchCourses();
     }, []);
 
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        const { name, value, type, checked } = e.target;
 
-    const handleSaveLead = async () => {
-        // Encontra o curso pelo slug no estado de allCourses
-        const selectedCourse = allCourses.find(c => c.slug === formData.course);
+        const sanitizedValue =
+            name === "name" ? sanitizeInput(value) : value;
 
-        // Prepara o payload, aplicando sanitização em todos os campos
-        const payload = {
-            nome: sanitizeInput(formData.name),
-            telefone: sanitizeInput(formData.phone),
-            curso_interesse: sanitizeInput(selectedCourse?.name || 'Não especificado'),
-            horario_interesse: sanitizeInput(formData.contactTime || 'Qualquer horário')
-        };
-
-        try {
-            await leadService.create(payload);
-            return true; 
-        } catch (error: any) {
-            console.error("Erro ao salvar lead:", error);
-
-            if (error.message === 'RATE_LIMIT_EXCEEDED') {
-                toast.warning("Aguarde um momento!", {
-                    description: "Você só pode enviar o formulário uma vez por minuto. Tente novamente em breve."
-                });
-            } else {
-                toast.error("Erro ao salvar contato.", {
-                    description: "Ocorreu uma falha no registro dos seus dados. Tente novamente mais tarde."
-                });
-            }
-            return false;
-        }
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === "checkbox" ? checked : sanitizedValue
+        }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Validação de campos obrigatórios
-        if (!formData.name || !formData.phone || !formData.whatsapp) {
-            toast.error("Preenchimento obrigatório.", {
-                description: "Por favor, preencha nome, telefone e WhatsApp."
-            });
-            return;
-        }
-        
-        // Validação da Checkbox de LGPD
-        const lgpdChecked = (document.getElementById('lgpd-consent') as HTMLInputElement)?.checked;
-        if (!lgpdChecked) {
-             toast.error("Consentimento LGPD necessário.", {
-                description: "É obrigatório concordar com o uso dos dados para contato."
-            });
-            return;
-        }
-
-
         setLoading(true);
-        const savedSuccessfully = await handleSaveLead();
 
-        if (savedSuccessfully) {
-            const selectedCourse = allCourses.find(c => c.slug === formData.course);
-            
-            // Mensagem de WhatsApp
-            const message = `Olá! Gostaria de mais informações sobre os cursos da IesCursos.
+        try {
+            if (!formData.name || !formData.phone || !formData.course) {
+                toast.error("Por favor, preencha nome, telefone e o curso de interesse.");
+                setLoading(false);
+                return;
+            }
 
-Nome: ${formData.name}
-Telefone: ${formData.phone}
-WhatsApp: ${formData.whatsapp}
-Curso de Interesse: ${selectedCourse?.name || 'Não especificado'}
-Melhor horário para contato: ${formData.contactTime || 'Qualquer horário'}
+            const phoneValue = formData.phone || '';
 
-Aguardo retorno. Obrigado!`;
+            const sanitizedData = {
+                ...formData,
+                name: sanitizeInput(formData.name),
+                phone: phoneValue.replace(/\D/g, "") // <--- regex corrigida
+            };
 
-            const whatsappUrl = `https://wa.me/5538988630487?text=${encodeURIComponent(message)}`;
-            
+            await leadService.create(sanitizedData);
+
+            toast.success("Dados salvos com sucesso! Redirecionando para o WhatsApp...");
+
+            const whatsappMessage = `Olá, meu nome é ${sanitizedData.name}, gostaria de saber mais sobre o curso de ${sanitizedData.course}. Meu telefone é ${sanitizedData.phone}.`;
+            const whatsappUrl = `https://wa.me/5538988630487?text=${encodeURIComponent(whatsappMessage)}`;
+
             window.open(whatsappUrl, '_blank');
-            
-            toast.success("Dados enviados!", {
-                description: "Redirecionando você para o WhatsApp. Seus dados foram salvos para contato."
-            });
 
-            setFormData({ name: '', phone: '', whatsapp: '', course: '', contactTime: '' });
+        } catch (error) {
+            console.error("Erro ao salvar lead:", error);
+            toast.error("Ocorreu um erro ao enviar seus dados. Tente novamente.");
+        } finally {
+            setLoading(false);
         }
-        
-        setLoading(false);
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
+    const sectionClasses = "py-20 bg-gray-900 text-white";
+    const cardClasses = "bg-white p-8 lg:p-12 rounded-xl shadow-2xl";
+    const titleClasses = "text-3xl lg:text-4xl font-bold text-gray-900 mb-6";
+    const inputClasses = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E45B25] focus:border-[#E45B25] transition duration-150 text-gray-800";
+    const buttonClasses = "w-full bg-[#E45B25] text-white py-4 rounded-lg font-bold text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed";
 
     return (
-        <section id="contact" className="py-20 bg-[#343A40]">
+        <section id="contact" className={sectionClasses}>
             <div className="container mx-auto px-4">
-                <motion.div
-                    initial={{ opacity: 0, y: 40, scale: 0.9, filter: 'blur(12px)' }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                    viewport={{ once: false, amount: 0.3 }}
-                    transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
-                    className="max-w-4xl mx-auto"
-                >
-                    {/* CABEÇALHO RESTAURADO */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: false, amount: 0.4 }}
-                        transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
-                        className="text-center mb-12"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0, y: 12 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: false, amount: 0.4 }}
-                            transition={{ delay: 0.05, duration: 0.45 }}
-                        >
-                            <MessageCircle className="w-16 h-16 text-white mx-auto mb-4" />
-                        </motion.div>
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
 
-                        <motion.h2
-                            initial={{ opacity: 0, y: 12 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: false, amount: 0.4 }}
-                            transition={{ delay: 0.1, duration: 0.5 }}
-                            className="text-4xl lg:text-5xl font-bold text-white mb-4"
-                        >
-                            Entre em Contato
-                        </motion.h2>
+                    {/* COLUNA ESQUERDA */}
+                    <div className="space-y-8">
+                        <span className="text-[#E45B25] font-semibold text-lg uppercase tracking-wider">
+                            Fale Conosco
+                        </span>
+                        <h2 className="text-4xl lg:text-5xl font-bold leading-tight text-white">
+                            Vamos tirar suas dúvidas e te ajudar a escolher o curso ideal.
+                        </h2>
+                        <p className="text-xl text-gray-400">
+                            Preencha o formulário para que um de nossos consultores entre em contato com você via WhatsApp.
+                        </p>
 
-                        <motion.p
-                            initial={{ opacity: 0, y: 12 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: false, amount: 0.4 }}
-                            transition={{ delay: 0.15, duration: 0.5 }}
-                            className="text-xl text-white"
-                        >
-                            Preencha o formulário e entraremos em contato pelo WhatsApp
-                        </motion.p>
-                    </motion.div>
-
-
-                    {/* Card do formulário */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40, scale: 0.9, filter: 'blur(10px)' }}
-                        whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                        viewport={{ once: false, amount: 0.3 }}
-                        transition={{ duration: 0.6, ease: [0.19, 1, 0.22, 1] }}
-                        className="bg-gray-50 rounded-2xl shadow-xl p-8"
-                    >
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            <div className="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label htmlFor="name" className="block text-gray-700 font-semibold mb-2">
-                                        Nome completo
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        name="name"
-                                        required
-                                        value={formData.name}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8430F] focus:border-transparent outline-none transition bg-white"
-                                        placeholder="Seu nome completo"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label htmlFor="phone" className="block text-gray-700 font-semibold mb-2">
-                                        Telefone (para contato)
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        id="phone"
-                                        name="phone"
-                                        required
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8430F] focus:border-transparent outline-none transition bg-white"
-                                        placeholder="(11) 99999-9999"
-                                    />
-                                </div>
+                        <div className="space-y-4 pt-4">
+                            <div className="flex items-center gap-4">
+                                <MapPin className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <span className="text-gray-300">Rua: Canabrava, : 100 - Centro, Unaí - MG, 38610-031</span>
                             </div>
+                            <div className="flex items-center gap-4">
+                                <Phone className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <span className="text-gray-300">(38) 98863-0487</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <Mail className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <span className="text-gray-300">iescursos@gmail.com.br</span>
+                            </div>
+                        </div>
+                    </div>
 
+                    {/* COLUNA DIREITA - FORMULÁRIO */}
+                    <div className={cardClasses}>
+                        <h3 className={titleClasses}>
+                            <MessageCircle className="inline-block w-8 h-8 mr-2 text-[#E45B25]" />
+                            Solicitar Contato
+                        </h3>
+
+                        <form onSubmit={handleSubmit} className="space-y-5 text-gray-800">
+
+                            {/* Nome */}
                             <div>
-                                <label htmlFor="whatsapp" className="block text-gray-700 font-semibold mb-2">
-                                    WhatsApp (para redirecionamento)
-                                </label>
+                                <label htmlFor="name" className="block text-sm font-medium mb-1">Nome Completo</label>
                                 <input
-                                    type="tel"
-                                    id="whatsapp"
-                                    name="whatsapp"
-                                    required
-                                    value={formData.whatsapp}
+                                    type="text"
+                                    id="name"
+                                    name="name"
+                                    value={formData.name}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8430F] focus:border-transparent outline-none transition bg-white"
-                                    placeholder="(11) 99999-9999"
+                                    required
+                                    className={inputClasses}
+                                    placeholder="Seu nome"
                                 />
                             </div>
 
+                            {/* Telefone */}
                             <div>
-                                <label htmlFor="course" className="block text-gray-700 font-semibold mb-2">
-                                    Curso de interesse
-                                </label>
-                                {loadingCourses ? (
-                                    <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white flex items-center gap-2 text-gray-500">
-                                        <Loader2 className="w-4 h-4 animate-spin" /> Carregando cursos...
-                                    </div>
-                                ) : (
+                                <label htmlFor="phone" className="block text-sm font-medium mb-1">Telefone (DDD + Número)</label>
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    required
+                                    className={inputClasses}
+                                    placeholder="(38) 98863-0487"
+                                />
+                            </div>
+
+                            {/* Curso */}
+                            <div>
+                                <label htmlFor="course" className="block text-sm font-medium mb-1">Curso de Interesse</label>
+                                <div className="relative">
                                     <select
                                         id="course"
                                         name="course"
                                         value={formData.course}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8430F] focus:border-transparent outline-none transition bg-white"
+                                        required
                                         disabled={loadingCourses}
+                                        className={inputClasses}
                                     >
-                                        <option value="">Selecione um curso</option>
-                                        {allCourses.map(course => ( // <-- USANDO O ESTADO AGORA
-                                            <option key={course.id} value={course.slug}>
-                                                {course.name}
+                                        <option value="">
+                                            {loadingCourses ? "Carregando cursos..." : "Selecione o curso"}
+                                        </option>
+                                        {allCourses.map(course => (
+                                            <option key={course.id} value={course.name}>
+                                                {course.name} ({course.type === 'presencial' ? 'Presencial' : 'EAD'})
                                             </option>
                                         ))}
                                     </select>
-                                )}
+
+                                    {loadingCourses && (
+                                        <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 animate-spin text-gray-500" />
+                                    )}
+                                </div>
                             </div>
 
+                            {/* Horário */}
                             <div>
-                                <label htmlFor="contactTime" className="block text-gray-700 font-semibold mb-2">
-                                    Melhor horário para contato
-                                </label>
+                                <label htmlFor="contactTime" className="block text-sm font-medium mb-1">Melhor Horário para Contato</label>
                                 <select
                                     id="contactTime"
                                     name="contactTime"
                                     value={formData.contactTime}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#A8430F] focus:border-transparent outline-none transition bg-white"
+                                    className={inputClasses}
                                 >
-                                    <option value="">Selecione um horário</option>
-                                    <option value="Manhã (08h às 11h)">Manhã (08h às 11h)</option>
-                                    <option value="Tarde (13h às 18h)">Tarde (13h às 18h)</option>
-                                    <option value="Noite (18h às 21h)">Noite (18h às 21h)</option>
-                                    <option value="Qualquer horário">Qualquer horário</option>
+                                    <option value="">Qual o melhor horário para te ligarmos?</option>
+                                    <option value="Manha">Manhã (08h - 12h)</option>
+                                    <option value="Tarde">Tarde (12h - 18h)</option>
+                                    <option value="Noite">Noite (18h - 21h)</option>
+                                    <option value="Whatsapp">Prefiro contato apenas pelo WhatsApp</option>
                                 </select>
                             </div>
-                            
-                            {/* Checkbox de Consentimento LGPD */}
-                            <div className='flex items-start gap-3 pt-2'>
-                                <input type="checkbox" id="lgpd-consent" name="lgpd-consent" required className='mt-1 w-4 h-4 text-[#A8430F] bg-gray-100 border-gray-300 rounded focus:ring-[#A8430F]' />
-                                <label htmlFor="lgpd-consent" className="text-sm text-gray-600">
-                                    Ao clicar, você concorda com o uso de seus dados para que um de nossos consultores entre em contato via WhatsApp e telefone.
+
+                            {/* Checkbox */}
+                            <div className="flex items-start">
+                                <input
+                                    type="checkbox"
+                                    id="whatsappCheck"
+                                    name="whatsapp"
+                                    checked={formData.whatsapp}
+                                    onChange={handleChange}
+                                    className="mt-1 h-5 w-5 text-[#E45B25] border-gray-300 rounded focus:ring-[#E45B25]"
+                                />
+                                <label htmlFor="whatsappCheck" className="ml-2 block text-sm font-medium text-gray-700">
+                                    Concordo em receber contato e informações do curso pelo WhatsApp.
                                 </label>
                             </div>
 
-
-                            <motion.button
+                            {/* Botão */}
+                            <button
                                 type="submit"
                                 disabled={loading || loadingCourses}
-                                whileHover={{ scale: loading || loadingCourses ? 1 : 1.02 }}
-                                whileTap={{ scale: loading || loadingCourses ? 1 : 0.98 }}
-                                transition={{ duration: 0.15, ease: 'easeOut' }}
-                                className="w-full bg-[#A8430F] text-white py-4 rounded-lg font-bold text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed"
+                                className={buttonClasses}
                             >
                                 {loading ? (
                                     <>
@@ -316,10 +247,12 @@ Aguardo retorno. Obrigado!`;
                                         Enviar e receber contato pelo WhatsApp
                                     </>
                                 )}
-                            </motion.button>
+                            </button>
+
                         </form>
-                    </motion.div>
-                </motion.div>
+                    </div>
+
+                </div>
             </div>
         </section>
     );

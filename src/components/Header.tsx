@@ -1,249 +1,216 @@
-// Header.tsx – Versão restaurada + adaptada para React Router
-// Mantém 100% do visual e animações do Header original
+// Header.tsx – Versão com Fundo Preto Sólido, Dropdown de Cursos Corrigido e Sem Animações
 
 import { useState, useEffect } from "react";
-import { Menu, X, GraduationCap, Camera } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Menu, X, ChevronDown, GraduationCap, Camera } from "lucide-react"; 
 import { useNavigate, useLocation } from "react-router-dom";
+import logo from "./img/logo-ies-not-background-2.png"; 
 
 export function Header() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detecta se está na Home
   const isHomePage = location.pathname === "/";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isCoursesOpen, setIsCoursesOpen] = useState(false);
+  const [isCoursesDropdownOpen, setIsCoursesDropdownOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
 
-  // Scroll para seções da Home
-  const scrollToSection = (id: string) => {
-    // Se NÃO estiver na home → navega para home e scrolla depois
-    if (!isHomePage) {
-      navigate("/");
+  // Cor de Destaque
+  const ACCENT_COLOR = "#E45B25"; // Laranja
+
+  // Lógica para esconder o header ao rolar (MANTIDA)
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
+
+    const handleScroll = () => {
+      if (window.scrollY > 200) {
+        if (window.scrollY > lastScrollY) {
+          setHidden(true);
+        } else {
+          setHidden(false);
+        }
+      } else {
+        setHidden(false);
+      }
+      lastScrollY = window.scrollY;
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Função centralizada de Scroll/Navegação
+  const scrollToSection = (id: string, path = "/") => {
+    if (location.pathname !== path) {
+      navigate(path);
       setTimeout(() => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 150);
-
-      setIsMenuOpen(false);
-      setIsCoursesOpen(false);
-      return;
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
     }
-
-    // Se já está na home, scrolla normalmente
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-
+    // Fecha menus após a ação
     setIsMenuOpen(false);
-    setIsCoursesOpen(false);
-  };
-
-  const goToAllCourses = () => {
-    navigate("/cursos");
-    setIsCoursesOpen(false);
-    setIsMenuOpen(false);
+    setIsCoursesDropdownOpen(false);
   };
 
   const goToMoments = () => {
     navigate("/momentos");
-    setIsCoursesOpen(false);
     setIsMenuOpen(false);
+    setIsCoursesDropdownOpen(false);
   };
+  
+  // Opções do Dropdown de Cursos
+  const courseOptions = [
+    { label: "Cursos Presenciais", action: () => scrollToSection("courses") },
+    { label: "Cursos EAD", action: () => scrollToSection("ead-courses") },
+    { label: "Ver Todos os Cursos", action: () => scrollToSection("courses", "/cursos") },
+  ];
 
-  // HEADER SOME AO DESCER / APARECE AO SUBIR
-  useEffect(() => {
-    let lastY = window.scrollY;
-
-    const update = () => {
-      const currentY = window.scrollY;
-
-      if (currentY > lastY && currentY > 70) {
-        setHidden(true);
-      } else {
-        setHidden(false);
-      }
-
-      lastY = currentY;
-    };
-
-    window.addEventListener("scroll", update);
-    return () => window.removeEventListener("scroll", update);
-  }, []);
 
   return (
-    <motion.header
-      initial={{ y: -60, opacity: 0 }}
-      animate={{
-        y: hidden ? -80 : 0,
-        opacity: 1,
-      }}
-      transition={{ duration: 0.35, ease: [0.19, 1, 0.22, 1] }}
-      className="fixed top-0 left-0 w-full z-50 bg-black text-white shadow-xl"
+    <header
+      className={`fixed top-0 z-50 w-full transition-transform duration-300 shadow-xl ${
+        hidden ? "transform -translate-y-full" : "transform translate-y-0"
+      } bg-black text-white`}
     >
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex items-center justify-between h-17">
-          {/* LOGO */}
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => scrollToSection("hero")}
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-20">
+          {/* Logo */}
+          <div 
+            onClick={() => scrollToSection("hero")} 
+            className="flex items-center gap-2 cursor-pointer transition-opacity hover:opacity-80"
           >
-            <GraduationCap className="w-8 h-8 text-[#E45B25]" />
-            <span className="text-2xl font-bold text-white">
-              Ies<span className="text-[#E45B25]">Cursos</span>
-            </span>
+            <img src={logo} alt="Logo IesCursos" className="h-10 w-auto" />
           </div>
 
-          {/* MENU DESKTOP */}
-          <nav className="hidden lg:flex items-center gap-8">
+          {/* Navegação Desktop */}
+          <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
             <button
               onClick={() => scrollToSection("hero")}
-              className="hover:text-[#E45B25] transition-colors"
+              className={`py-2 hover:text-[${ACCENT_COLOR}] transition-colors`}
             >
               Início
             </button>
 
+            {/* === NOVO: MENU DROPDOWN DE CURSOS - CORREÇÃO DE GAP === */}
+            <div 
+              className="relative"
+              // Os eventos de mouse estão no container pai, que é o correto
+              onMouseEnter={() => setIsCoursesDropdownOpen(true)}
+              onMouseLeave={() => setIsCoursesDropdownOpen(false)}
+            >
+              {/* Botão Principal Cursos */}
+              <button
+                className={`py-2 flex items-center gap-1 hover:text-[${ACCENT_COLOR}] transition-colors`}
+              >
+                Cursos <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCoursesDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+              </button>
+
+              {/* Dropdown Content */}
+              {isCoursesDropdownOpen && (
+                <div 
+                  // ALTERADO: Usa 'top-full' em vez de 'mt-2' para eliminar o gap vertical.
+                  className="absolute top-full left-1/2 transform -translate-x-1/2 w-56 bg-white rounded-lg shadow-xl overflow-hidden z-50 border border-gray-100"
+                >
+                  {courseOptions.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={option.action}
+                      className="block w-full text-left px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 hover:text-[${ACCENT_COLOR}] transition-colors"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* === FIM DO DROPDOWN === */}
+            
             <button
               onClick={goToMoments}
-              className="hover:text-[#A8430F] transition-colors flex items-center gap-1"
+              className={`py-2 hover:text-[${ACCENT_COLOR}] transition-colors flex items-center gap-1`}
             >
               <Camera className="w-4 h-4" /> Momentos
             </button>
 
-            {/* DROPDOWN CURSOS */}
-            <div
-              className="relative"
-              onMouseEnter={() => setIsCoursesOpen(true)}
-              onMouseLeave={() => setIsCoursesOpen(false)}
-            >
-              <button className="hover:text-[#A8430F] transition-colors">
-                Cursos
-              </button>
-
-              <AnimatePresence>
-                {isCoursesOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-0 top-full w-64 bg-white text-black rounded-lg shadow-xl py-2"
-                  >
-                    {["Informática Básica", "Informática Avançada", "Gestão Empresarial", "Inglês"].map(
-                      (curso) => (
-                        <button
-                          key={curso}
-                          onClick={() => scrollToSection("courses")}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        >
-                          {curso}
-                        </button>
-                      )
-                    )}
-
-                    <div className="border-t my-2" />
-
-                    <button
-                      onClick={goToAllCourses}
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100 font-semibold text-[#E45B25]"
-                    >
-                      Ver Todos os Cursos
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
             <button
               onClick={() => scrollToSection("about")}
-              className="hover:text-[#A8430F] transition-colors"
+              className={`py-2 hover:text-[${ACCENT_COLOR}] transition-colors`}
             >
               Sobre a IesCursos
             </button>
 
             <button
               onClick={() => scrollToSection("contact")}
-              className="hover:text-[#A8430F] transition-colors"
+              className={`py-2 hover:text-[${ACCENT_COLOR}] transition-colors`}
             >
               Fale Conosco
             </button>
 
-            <motion.button
+            {/* BOTÃO MATRICULE-SE: Fundo Laranja, Texto Branco */}
+            <button
               onClick={() => scrollToSection("simulator")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="bg-[#E45B25] px-6 py-2.5 rounded-full font-semibold shadow-lg hover:bg-[#d66a1f]"
+              className={`bg-[${ACCENT_COLOR}] py-2.5 px-6 rounded-full font-bold text-white transition-colors hover:bg-[#d66a1f] shadow-lg`}
             >
               Matricule-se
-            </motion.button>
+            </button>
           </nav>
 
-          {/* MOBILE BUTTON */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="lg:hidden"
-          >
-            {isMenuOpen ? <X /> : <Menu />}
-          </button>
+          {/* Mobile Menu Icon */}
+          <div className="lg:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
         </div>
 
-        {/* MENU MOBILE */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
-              className="lg:hidden pb-4 space-y-3"
+        {/* Menu Mobile (Inalterado) */}
+        <div
+          className={`lg:hidden pb-4 space-y-3 transition-all duration-300 ease-in-out overflow-hidden bg-black text-white ${
+            isMenuOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+          }`}
+        >
+          <button onClick={() => scrollToSection("hero")} className="block py-2 hover:text-[#E45B25]">
+            Início
+          </button>
+          
+          <h3 className="pt-2 font-bold text-gray-400">Cursos</h3>
+          {courseOptions.map((option, index) => (
+            <button
+              key={index}
+              onClick={option.action}
+              className="block w-full text-left pl-4 py-2 text-sm text-white hover:text-[#E45B25] transition-colors"
             >
-              <button onClick={() => scrollToSection("hero")} className="block py-2">
-                Início
-              </button>
+              - {option.label}
+            </button>
+          ))}
 
-              <button onClick={() => scrollToSection("courses")} className="block py-2">
-                Cursos Presenciais
-              </button>
+          <button
+            onClick={goToMoments}
+            className={`block py-2 font-bold hover:text-[#E45B25] flex items-center gap-2`}
+          >
+            <Camera className="w-4 h-4" /> Momentos
+          </button>
+          
+          <button onClick={() => scrollToSection("about")} className="block py-2 hover:text-[#E45B25]">
+            Sobre a IesCursos
+          </button>
 
-              <button onClick={() => scrollToSection("ead-courses")} className="block py-2">
-                Cursos EAD
-              </button>
+          <button onClick={() => scrollToSection("contact")} className="block py-2 hover:text-[#E45B25]">
+            Fale Conosco
+          </button>
 
-              <button
-                onClick={goToMoments}
-                className="block py-2 font-bold text-[#A8430F] flex items-center gap-2"
-              >
-                <Camera className="w-4 h-4" /> Momentos
-              </button>
-
-              <button
-                onClick={goToAllCourses}
-                className="block py-2 font-bold text-[#A8430F]"
-              >
-                Ver Todos os Cursos
-              </button>
-
-              <button onClick={() => scrollToSection("about")} className="block py-2">
-                Sobre a IesCursos
-              </button>
-
-              <button onClick={() => scrollToSection("contact")} className="block py-2">
-                Fale Conosco
-              </button>
-
-              <button
-                onClick={() => scrollToSection("simulator")}
-                className="bg-[#A8430F] w-full py-2.5 rounded-full font-bold text-white"
-              >
-                Matricule-se
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
+          <button
+            onClick={() => scrollToSection("simulator")}
+            className={`bg-[${ACCENT_COLOR}] w-full py-2.5 rounded-full font-bold text-white mt-2 hover:bg-[#d66a1f]`}
+          >
+            Matricule-se
+          </button>
+        </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

@@ -40,6 +40,13 @@ export interface Banner {
   ativo: boolean;
   ordem: number;
 }
+// 🟩 NOVA INTERFACE: Momento/Foto da Galeria
+export interface Moment {
+    id: string;
+    titulo: string; // Descrição opcional ou legenda
+    imagem_url: string; // URL da imagem armazenada no Supabase
+    data_upload: string; // Data de criação/upload
+}
 
 // 🟩 NOVA INTERFACE: Leads de Contato do WhatsApp
 export interface Lead {

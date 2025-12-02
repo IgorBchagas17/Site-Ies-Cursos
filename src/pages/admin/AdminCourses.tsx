@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState, FormEvent } from "react";
-import { createPortal } from "react-dom"; // IMPORTANTE: Importação necessária
+// src/pages/AdminCourses.tsx
+
+import { useEffect, useMemo, useState, FormEvent, HTMLProps } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
   Edit,
@@ -9,7 +11,6 @@ import {
   Copy,
   Eye,
   EyeOff,
-  Star,
   Filter,
   Layers,
   PackageSearch,
@@ -17,13 +18,22 @@ import {
   X,
   RotateCw,
   ExternalLink,
+  Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Course } from "../../types";
 import { useAuth } from "../../context/AuthContext";
 import { courseService } from "../../services/courseService";
 
-type AdminCourse = Course;
+// Cores Padronizadas (Tema Escuro)
+const ACCENT_COLOR = "#E45B25"; // Laranja Principal
+const DARK_BACKGROUND = "#18181B"; // Fundo Principal (zinc-900)
+const DARK_SHADE = "#27272A"; // Fundo Secundário (zinc-800)
+const TEXT_COLOR = "#FAFAFA"; // Texto Claro (zinc-50)
+const INPUT_BG = "#0A0A0A"; // Fundo de Input (zinc-950)
+
+// ATENÇÃO: isFeatured foi removido da tipagem local para simplificar o Admin
+type AdminCourse = Omit<Course, 'isFeatured'>;
 
 type CourseErrors = Partial<Record<keyof AdminCourse | "promoPrice", string>>;
 
@@ -53,6 +63,7 @@ const ADMIN_CONFIRM_PASSWORD = "admin";
 // ------------------------
 
 function normalizeCourse(course: any): AdminCourse {
+  // Ignoramos a propriedade isFeatured do banco, pois ela será removida do Admin
   return {
     id: course.id,
     name: course.name ?? "",
@@ -76,7 +87,7 @@ function normalizeCourse(course: any): AdminCourse {
     workload: course.workload ?? "",
     imageUrl: course.imageUrl ?? course.image ?? "",
     active: course.active ?? true,
-    isFeatured: course.isFeatured ?? course.featured ?? false,
+    // isFeatured: course.isFeatured ?? course.featured ?? false, // Removido
   };
 }
 
@@ -102,27 +113,22 @@ function validateCourse(course: AdminCourse): CourseErrors {
     errors.slug = "Informe o slug (URL amigável).";
   }
 
-  if (!course.type?.trim()) {
-    errors.type = "Selecione a modalidade.";
-  }
-
-  const priceNumber =
-    typeof course.price === "number"
-      ? course.price
-      : Number(course.price ?? NaN);
-
+  const priceNumber = Number(course.price ?? NaN);
   if (Number.isNaN(priceNumber) || priceNumber < 0) {
-    errors.price = "Informe um preço válido (zero ou maior).";
+    errors.price = "Informe um preço base válido (zero ou maior).";
   }
+  
+  const promoPriceNumber = 
+    (course.promoPrice !== null && course.promoPrice !== undefined)
+      ? Number(course.promoPrice)
+      : null;
 
-  if (
-    course.promoPrice !== null &&
-    course.promoPrice !== undefined &&
-    (Number.isNaN(Number(course.promoPrice)) ||
-      Number(course.promoPrice) < 0)
-  ) {
-    errors.promoPrice =
-      "Informe um preço promocional válido (ou deixe em branco).";
+  if (promoPriceNumber !== null) {
+      if (Number.isNaN(promoPriceNumber) || promoPriceNumber < 0) {
+          errors.promoPrice = "Preço promocional inválido (zero ou maior).";
+      } else if (promoPriceNumber >= priceNumber) {
+          errors.promoPrice = "O preço promocional deve ser menor que o preço base.";
+      }
   }
 
   return errors;
@@ -132,8 +138,63 @@ function hasErrors(errors: CourseErrors) {
   return Object.values(errors).some(Boolean);
 }
 
+/**
+ * Função helper para verificar se o curso está em promoção válida.
+ */
+function isCoursePromoted(course: AdminCourse) {
+    const price = course.price ?? 0;
+    const promoPrice = course.promoPrice;
+    return promoPrice !== null && promoPrice !== undefined && promoPrice > 0 && promoPrice < price;
+}
+
 // ------------------------
-// FORM COMPONENT
+// TOGGLE SWITCH ANIMADO
+// ------------------------
+
+interface ToggleSwitchProps extends HTMLProps<HTMLInputElement> {
+  checked: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  label: string;
+}
+
+const ToggleSwitch = ({ checked, onChange, label, ...rest }: ToggleSwitchProps) => {
+    // Cor de fundo do trilho no modo escuro
+    const trackColor = checked ? ACCENT_COLOR : '#3F3F46'; // Laranja ou Zinc-500
+    
+    return (
+        <label className="flex items-center cursor-pointer select-none">
+            {/* Texto em branco no modo escuro */}
+            <span className={`mr-3 text-sm font-medium`} style={{ color: TEXT_COLOR }}>{label}</span>
+            <div className="relative">
+                <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={onChange}
+                    className="sr-only" // Esconde o checkbox nativo
+                    {...rest}
+                />
+                {/* Trilho do Switch */}
+                <motion.div
+                    className="w-10 h-6 rounded-full shadow-inner"
+                    style={{ backgroundColor: trackColor }}
+                    initial={false} 
+                    animate={{ backgroundColor: checked ? ACCENT_COLOR : '#3F3F46' }}
+                    transition={{ duration: 0.2 }}
+                />
+                {/* Bolinha do Switch */}
+                <motion.div
+                    className="absolute w-4 h-4 bg-white rounded-full shadow-md top-1"
+                    initial={false}
+                    animate={{ x: checked ? 20 : 2 }} // Move para a direita quando checked
+                    transition={{ duration: 0.2 }}
+                />
+            </div>
+        </label>
+    );
+};
+
+// ------------------------
+// FORM COMPONENT (Tema Escuro + Layout Melhorado)
 // ------------------------
 
 function CourseForm({
@@ -147,6 +208,8 @@ function CourseForm({
   const [errors, setErrors] = useState<CourseErrors>({});
   const [newContent, setNewContent] = useState("");
   const [newBenefit, setNewBenefit] = useState("");
+  
+  const isPromoChecked = form.promoPrice !== null && form.promoPrice !== undefined; 
 
   useEffect(() => {
     setForm(initialCourse);
@@ -172,6 +235,19 @@ function CourseForm({
       const autoSlug = slugify(value);
       setForm((prev) => ({ ...prev, slug: autoSlug }));
       setErrors((prev) => ({ ...prev, slug: undefined }));
+    }
+  }
+
+  function handleTogglePromo(e: React.ChangeEvent<HTMLInputElement>) {
+    const isChecked = e.target.checked;
+    if (isChecked) {
+        const defaultPromo = (form.promoPrice && form.promoPrice > 0) 
+            ? form.promoPrice 
+            : form.price ?? 0;
+        updateField("promoPrice", defaultPromo);
+    } else {
+        updateField("promoPrice", null);
+        setErrors((prev) => ({ ...prev, promoPrice: undefined }));
     }
   }
 
@@ -216,10 +292,9 @@ function CourseForm({
         form.price === undefined || form.price === null
           ? 0
           : Number(form.price),
-      promoPrice:
-        form.promoPrice === undefined || form.promoPrice === null
-          ? null
-          : Number(form.promoPrice),
+      promoPrice: isPromoChecked
+          ? Number(form.promoPrice)
+          : null,
     };
 
     const validation = validateCourse(normalized);
@@ -228,8 +303,9 @@ function CourseForm({
       toast.error("Verifique os campos destacados antes de salvar.");
       return;
     }
-
-    onSubmit(normalized);
+    
+    // NOTE: Ao enviar, incluímos isFeatured: false, pois a opção foi removida do UI
+    onSubmit({...normalized, isFeatured: false} as any); 
   }
 
   const priceValue =
@@ -239,341 +315,326 @@ function CourseForm({
       ? ""
       : String(form.promoPrice);
 
+  const inputClass = (fieldError: string | undefined) =>
+    // CORRIGIDO: Garante o background escuro (bg-zinc-900/60) para inputs e selects
+    `px-3 py-2 rounded-lg border text-sm text-[${TEXT_COLOR}] ${fieldError ? "border-red-500" : "border-zinc-700"} bg-zinc-900/60 focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] appearance-none`;
+  
+  const labelClass = "text-xs font-semibold text-zinc-400 uppercase tracking-wide";
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.4, ease: [0.19, 1, 0.22, 1] }}
-      className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 md:p-6 shadow-xl"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      // Tema Escuro
+      className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-4 md:p-8 shadow-xl text-[${TEXT_COLOR}]`}
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between mb-6 border-b border-zinc-700 pb-4">
         <div>
-          <h2 className="text-lg font-semibold">
-            {isCreating ? "Adicionar novo curso" : "Editar curso"}
+          <h2 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>
+            {isCreating ? "Adicionar Novo Curso" : "Editar Curso"}
           </h2>
-          <p className="text-xs text-zinc-400">
-            Preencha os campos abaixo e salve para atualizar o site.
+          <p className="text-sm text-zinc-400">
+            Gerencie as informações e a visibilidade no site.
           </p>
         </div>
 
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-200"
+          className="flex items-center gap-1 text-sm text-zinc-400 hover:text-red-400 transition-colors"
         >
-          <X size={14} />
+          <X size={18} />
           Fechar
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Linha 1 */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              Nome do curso <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              className={`px-3 py-2 rounded-lg bg-zinc-950/60 border text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                errors.name ? "border-red-500" : "border-zinc-700"
-              }`}
-            />
-            {errors.name && (
-              <span className="text-[11px] text-red-400">{errors.name}</span>
-            )}
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* === GRUPO 1: INFORMAÇÕES BÁSICAS === */}
+        <div className={`space-y-4 border p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+            <h3 className="text-base font-bold text-zinc-300 flex items-center gap-2">
+                <Layers size={16} style={{ color: ACCENT_COLOR }} /> Detalhes do Curso
+            </h3>
+            <div className="grid md:grid-cols-3 gap-4">
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Nome do curso <span className="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        className={inputClass(errors.name)}
+                    />
+                    {errors.name && (<span className="text-[11px] text-red-500">{errors.name}</span>)}
+                </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              Slug (URL amigável) <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.slug}
-              onChange={(e) => updateField("slug", slugify(e.target.value))}
-              className={`px-3 py-2 rounded-lg bg-zinc-950/60 border text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                errors.slug ? "border-red-500" : "border-zinc-700"
-              }`}
-            />
-            {errors.slug && (
-              <span className="text-[11px] text-red-400">{errors.slug}</span>
-            )}
-          </div>
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Slug (URL amigável) <span className="text-red-500">*</span></label>
+                    <input
+                        type="text"
+                        value={form.slug}
+                        onChange={(e) => updateField("slug", slugify(e.target.value))}
+                        className={inputClass(errors.slug)}
+                    />
+                    {errors.slug && (<span className="text-[11px] text-red-500">{errors.slug}</span>)}
+                </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              Modalidade <span className="text-red-400">*</span>
-            </label>
-            <select
-              value={form.type}
-              onChange={(e) =>
-                updateField(
-                  "type",
-                  e.target.value === "ead" ? "ead" : "presencial"
-                )
-              }
-              className={`px-3 py-2 rounded-lg bg-zinc-950/60 border text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                errors.type ? "border-red-500" : "border-zinc-700"
-              }`}
-            >
-              <option value="presencial">Presencial</option>
-              <option value="ead">EAD</option>
-            </select>
-            {errors.type && (
-              <span className="text-[11px] text-red-400">{errors.type}</span>
-            )}
-          </div>
+                {/* Select com background e texto dark */}
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Modalidade <span className="text-red-500">*</span></label>
+                    <select
+                        value={form.type}
+                        onChange={(e) => updateField("type", e.target.value === "ead" ? "ead" : "presencial")}
+                        className={`${inputClass(errors.type)} cursor-pointer`}
+                    >
+                        <option value="presencial">Presencial</option>
+                        <option value="ead">EAD</option>
+                    </select>
+                    {errors.type && (<span className="text-[11px] text-red-500">{errors.type}</span>)}
+                </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Duração (Ex: 3 meses)</label>
+                    <input
+                        type="text"
+                        value={form.duration ?? ""}
+                        onChange={(e) => updateField("duration", e.target.value)}
+                        className={inputClass(errors.duration)}
+                    />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Carga horária (Ex: 120h)</label>
+                    <input
+                        type="text"
+                        value={form.workload ?? ""}
+                        onChange={(e) => updateField("workload", e.target.value)}
+                        className={inputClass(errors.workload)}
+                    />
+                </div>
+            </div>
         </div>
 
-        {/* Linha 2 */}
-        <div className="grid md:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">Duração</label>
-            <input
-              type="text"
-              value={form.duration ?? ""}
-              onChange={(e) => updateField("duration", e.target.value)}
-              className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+        {/* === GRUPO 2: PREÇO E PROMOÇÃO === */}
+        <div className={`space-y-4 border p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+            <h3 className="text-base font-bold text-zinc-300 flex items-center gap-2">
+                <Tag size={16} style={{ color: ACCENT_COLOR }} /> Gestão de Preços
+            </h3>
+            
+            <div className="grid md:grid-cols-3 gap-4 items-end">
+                {/* Preço Base */}
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Preço Base (R$) <span className="text-red-500">*</span></label>
+                    <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={priceValue}
+                        onChange={(e) =>
+                            updateField("price", e.target.value === "" ? 0 : Number(e.target.value))
+                        }
+                        className={inputClass(errors.price)}
+                    />
+                    {errors.price && (<span className="text-[11px] text-red-500">{errors.price}</span>)}
+                </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">Carga horária</label>
-            <input
-              type="text"
-              value={form.workload ?? ""}
-              onChange={(e) => updateField("workload", e.target.value)}
-              className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
+                {/* Toggle de Promoção */}
+                <div className="flex flex-col gap-1 h-full justify-end">
+                    <ToggleSwitch 
+                        label="Curso em Promoção" 
+                        checked={isPromoChecked}
+                        onChange={handleTogglePromo}
+                    />
+                </div>
+
+                {/* Preço Promocional */}
+                <motion.div 
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ 
+                        opacity: isPromoChecked ? 1 : 0.5, 
+                        x: 0,
+                        height: isPromoChecked ? 'auto' : 0
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className={`flex flex-col gap-1 overflow-hidden ${isPromoChecked ? '' : 'pointer-events-none'}`}
+                >
+                    <label className={labelClass}>
+                        Preço Promocional (R$) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={promoPriceValue}
+                        onChange={(e) =>
+                            updateField("promoPrice", e.target.value === "" ? null : Number(e.target.value))
+                        }
+                        className={inputClass(errors.promoPrice)}
+                        disabled={!isPromoChecked}
+                    />
+                    {errors.promoPrice && (<span className="text-[11px] text-red-500">{errors.promoPrice}</span>)}
+                </motion.div>
+            </div>
+        </div>
+        
+        {/* === GRUPO 3: VISIBILIDADE E MIDIA (Removido o Destaque na Home) === */}
+        <div className={`space-y-4 border p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+            <h3 className="text-base font-bold text-zinc-300 flex items-center gap-2">
+                <Eye size={16} style={{ color: ACCENT_COLOR }} /> Visibilidade
+            </h3>
+            
+            <div className="grid md:grid-cols-3 gap-4">
+                {/* Ativo */}
+                <ToggleSwitch 
+                    label="Curso ativo no site" 
+                    checked={form.active ?? true}
+                    onChange={(e) => updateField("active", e.target.checked)}
+                />
+
+                {/* URL Imagem (Movido para onde estava o Destaque na Home) */}
+                <div className="flex flex-col gap-1 col-span-2">
+                    <label className={labelClass}>URL da imagem (opcional)</label>
+                    <input
+                        type="text"
+                        value={form.imageUrl ?? ""}
+                        onChange={(e) => updateField("imageUrl", e.target.value)}
+                        className={inputClass(errors.imageUrl)}
+                    />
+                </div>
+            </div>
         </div>
 
-        {/* Linha 3 */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              Preço (R$) <span className="text-red-400">*</span>
-            </label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={priceValue}
-              onChange={(e) =>
-                updateField(
-                  "price",
-                  e.target.value === "" ? 0 : Number(e.target.value)
-                )
-              }
-              className={`px-3 py-2 rounded-lg bg-zinc-950/60 border text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                errors.price ? "border-red-500" : "border-zinc-700"
-              }`}
-            />
-            {errors.price && (
-              <span className="text-[11px] text-red-400">{errors.price}</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 mt-6">
-            <input
-              type="checkbox"
-              checked={!!form.promoPrice && Number(form.promoPrice) > 0}
-              onChange={(e) =>
-                updateField(
-                  "promoPrice",
-                  e.target.checked
-                    ? form.promoPrice && form.promoPrice > 0
-                      ? form.promoPrice
-                      : form.price ?? 0
-                    : null
-                )
-              }
-              className="w-4 h-4 rounded border-zinc-600 bg-zinc-900"
-            />
-            <span className="text-xs text-zinc-300">Curso em promoção</span>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              Preço promocional (R$)
-            </label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={promoPriceValue}
-              onChange={(e) =>
-                updateField(
-                  "promoPrice",
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
-              }
-              className={`px-3 py-2 rounded-lg bg-zinc-950/60 border text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 ${
-                errors.promoPrice ? "border-red-500" : "border-zinc-700"
-              }`}
-              disabled={
-                !form.promoPrice && !(form.promoPrice && form.promoPrice > 0)
-              }
-            />
-            {errors.promoPrice && (
-              <span className="text-[11px] text-red-400">
-                {errors.promoPrice}
-              </span>
-            )}
-          </div>
+        {/* === GRUPO 4: DESCRIÇÕES === */}
+        <div className={`space-y-4 border p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+            <h3 className="text-base font-bold text-zinc-300 flex items-center gap-2">
+                <PackageSearch size={16} style={{ color: ACCENT_COLOR }} /> Textos e Conteúdo
+            </h3>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Descrição Curta (Preview do Card)</label>
+                    <textarea
+                        value={form.shortDescription ?? ""}
+                        onChange={(e) => updateField("shortDescription", e.target.value)}
+                        className={`${inputClass(errors.shortDescription)} h-20 resize-none`}
+                    />
+                </div>
+                
+                <div className="flex flex-col gap-1">
+                    <label className={labelClass}>Descrição Detalhada (Modal)</label>
+                    <textarea
+                        value={form.description ?? ""}
+                        onChange={(e) => updateField("description", e.target.value)}
+                        className={`${inputClass(errors.description)} h-20 resize-none`}
+                    />
+                </div>
+            </div>
         </div>
-
-        {/* Linha 4 */}
-        <div className="grid md:grid-cols-3 gap-3">
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              checked={form.isFeatured ?? false}
-              onChange={(e) => updateField("isFeatured", e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-600 bg-zinc-900"
-            />
-            <span className="text-xs text-zinc-300">Destaque na Home</span>
-          </div>
-
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="checkbox"
-              checked={form.active ?? true}
-              onChange={(e) => updateField("active", e.target.checked)}
-              className="w-4 h-4 rounded border-zinc-600 bg-zinc-900"
-            />
-            <span className="text-xs text-zinc-300">Curso ativo no site</span>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-zinc-300">
-              URL da imagem (opcional)
-            </label>
-            <input
-              type="text"
-              value={form.imageUrl ?? ""}
-              onChange={(e) => updateField("imageUrl", e.target.value)}
-              className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-          </div>
-        </div>
-
-        {/* Descrições */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-300">Descrição curta</label>
-          <input
-            type="text"
-            value={form.shortDescription ?? ""}
-            onChange={(e) => updateField("shortDescription", e.target.value)}
-            className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-300">Descrição detalhada</label>
-          <textarea
-            value={form.description ?? ""}
-            onChange={(e) => updateField("description", e.target.value)}
-            className="px-3 py-2 h-24 rounded-lg bg-zinc-950/60 border border-zinc-700 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-          />
-        </div>
-
-        {/* Conteúdo e benefícios */}
+        
+        {/* === GRUPO 5: LISTAS DE CONTEÚDO E BENEFÍCIOS === */}
         <div className="grid md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-zinc-300">Conteúdo do curso</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                placeholder="Adicionar novo tópico"
-                className="flex-1 px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button
-                type="button"
-                onClick={handleAddContent}
-                className="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs"
-              >
-                +
-              </button>
+            {/* Conteúdo do curso */}
+            <div className={`flex flex-col gap-2 p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+                <label className={labelClass}>Conteúdo do curso (tópicos)</label>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={newContent}
+                        onChange={(e) => setNewContent(e.target.value)}
+                        placeholder="Adicionar novo tópico"
+                        className="flex-1 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleAddContent}
+                        className={`px-3 py-2 rounded-lg text-white text-sm hover:bg-[#d66a1f]`}
+                        style={{ backgroundColor: ACCENT_COLOR }}
+                    >
+                        <Plus size={16} />
+                    </button>
+                </div>
+                <ul className="text-sm text-zinc-300 max-h-32 overflow-y-auto space-y-1 mt-2 p-1">
+                    {(form.content ?? []).map((item, index) => (
+                        <motion.li
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-700"
+                        >
+                            <span className="truncate">{item}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveContent(index)}
+                                className="text-red-500 hover:text-red-400"
+                            >
+                                <X size={14} />
+                            </button>
+                        </motion.li>
+                    ))}
+                </ul>
             </div>
-            <ul className="text-xs text-zinc-300 max-h-32 overflow-y-auto space-y-1">
-              {(form.content ?? []).map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-center justify-between gap-2 bg-zinc-950/60 px-2 py-1 rounded"
-                >
-                  <span className="truncate">{item}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveContent(index)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <X size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs text-zinc-300">Benefícios do curso</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newBenefit}
-                onChange={(e) => setNewBenefit(e.target.value)}
-                placeholder="Adicionar novo benefício"
-                className="flex-1 px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <button
-                type="button"
-                onClick={handleAddBenefit}
-                className="px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-xs"
-              >
-                +
-              </button>
+            {/* Benefícios do curso */}
+            <div className={`flex flex-col gap-2 p-4 rounded-lg bg-[${INPUT_BG}] border-zinc-800`}>
+                <label className={labelClass}>Benefícios do curso</label>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={newBenefit}
+                        onChange={(e) => setNewBenefit(e.target.value)}
+                        placeholder="Adicionar novo benefício"
+                        className="flex-1 px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <button
+                        type="button"
+                        onClick={handleAddBenefit}
+                        className={`px-3 py-2 rounded-lg text-white text-sm hover:bg-[#d66a1f]`}
+                        style={{ backgroundColor: ACCENT_COLOR }}
+                    >
+                        <Plus size={16} />
+                    </button>
+                </div>
+                <ul className="text-sm text-zinc-300 max-h-32 overflow-y-auto space-y-1 mt-2 p-1">
+                    {(form.benefits ?? []).map((item, index) => (
+                        <motion.li
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="flex items-center justify-between gap-2 bg-zinc-900/60 px-2 py-1 rounded border border-zinc-700"
+                        >
+                            <span className="truncate">{item}</span>
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveBenefit(index)}
+                                className="text-red-500 hover:text-red-400"
+                            >
+                                <X size={14} />
+                            </button>
+                        </motion.li>
+                    ))}
+                </ul>
             </div>
-            <ul className="text-xs text-zinc-300 max-h-32 overflow-y-auto space-y-1">
-              {(form.benefits ?? []).map((item, index) => (
-                <li
-                  key={index}
-                  className="flex items-center justify-between gap-2 bg-zinc-950/60 px-2 py-1 rounded"
-                >
-                  <span className="truncate">{item}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveBenefit(index)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <X size={12} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-300 hover:bg-zinc-800"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-xs text-white flex items-center gap-2 disabled:opacity-60"
-          >
-            <Save size={14} />
-            {saving ? "Salvando..." : "Salvar alterações"}
-          </button>
+        {/* Botões de Ação */}
+        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-700">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="px-6 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-300 hover:bg-zinc-800 transition-colors"
+            >
+                Cancelar
+            </button>
+            <button
+                type="submit"
+                disabled={saving}
+                className={`px-6 py-2 rounded-lg text-sm text-white flex items-center gap-2 disabled:opacity-60 transition-colors hover:bg-[#d66a1f] shadow-md`}
+                style={{ backgroundColor: ACCENT_COLOR }}
+            >
+                <Save size={16} />
+                {saving ? "Salvando..." : "Salvar alterações"}
+            </button>
         </div>
       </form>
     </motion.div>
@@ -581,7 +642,7 @@ function CourseForm({
 }
 
 // ------------------------
-// MODAL DE CONFIRMAÇÃO (CORRIGIDO COM PORTAL)
+// MODAL DE CONFIRMAÇÃO (Tema Escuro)
 // ------------------------
 
 function ConfirmModal({
@@ -597,14 +658,13 @@ function ConfirmModal({
   if (!open || !actionType) return null;
 
   const title =
-    actionType === "delete" ? "Confirmar exclusão" : "Alterar visibilidade";
+    actionType === "delete" ? "Confirmar Exclusão" : "Alterar Visibilidade";
 
   const description =
     actionType === "delete"
       ? `Tem certeza que deseja excluir o curso "${courseName}"? Essa ação não poderá ser desfeita.`
       : `Tem certeza que deseja alterar a visibilidade do curso "${courseName}" no site?`;
 
-  // === SOLUÇÃO: Usar createPortal para jogar o modal no document.body ===
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Overlay Escuro com Backdrop Blur */}
@@ -621,10 +681,11 @@ function ConfirmModal({
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-        className="relative bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md shadow-2xl z-10"
+        transition={{ duration: 0.2 }}
+        // Tema Escuro
+        className={`relative bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-6 w-full max-w-md shadow-2xl z-10 text-[${TEXT_COLOR}]`}
       >
-        <h2 className="text-lg font-semibold mb-2 text-white">{title}</h2>
+        <h2 className={`text-lg font-bold mb-2`} style={{ color: TEXT_COLOR }}>{title}</h2>
         <p className="text-sm text-zinc-300 mb-6 leading-relaxed">{description}</p>
 
         <div className="flex flex-col gap-2 mb-6">
@@ -638,20 +699,20 @@ function ConfirmModal({
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && onConfirm()}
-            className="w-full px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-700 text-white focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all placeholder:text-zinc-600"
+            className={`w-full px-4 py-3 rounded-lg bg-[${INPUT_BG}] border border-zinc-700 text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all placeholder:text-zinc-600`}
           />
           {error && (
             <motion.span 
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-xs text-red-400 font-medium flex items-center gap-1"
+              className="text-xs text-red-500 font-medium flex items-center gap-1"
             >
               • {error}
             </motion.span>
           )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex justify-end gap-3 pt-2 border-t border-zinc-700">
           <button
             type="button"
             onClick={onCancel}
@@ -664,8 +725,8 @@ function ConfirmModal({
             onClick={onConfirm}
             className={`px-4 py-2 rounded-lg text-sm text-white font-medium shadow-lg transition-all ${
                 actionType === 'delete' 
-                ? 'bg-red-600 hover:bg-red-700 shadow-red-900/20' 
-                : 'bg-orange-500 hover:bg-orange-600 shadow-orange-900/20'
+                ? 'bg-red-600 hover:bg-red-700' 
+                : 'bg-orange-500 hover:bg-orange-600'
             }`}
           >
             Confirmar
@@ -673,12 +734,13 @@ function ConfirmModal({
         </div>
       </motion.div>
     </div>,
-    document.body // Isso garante que o modal fique "acima" de todo o site
+    document.body
   );
 }
 
-// ... resto do componente AdminCourses (loadCourses, useEffect, etc) mantido igual ...
-// (Copie apenas a parte acima e mantenha a lógica abaixo igual, ou copie o arquivo todo se preferir)
+// ------------------------
+// ADMIN COURSES PRINCIPAL (Tema Escuro + Tabela Melhorada)
+// ------------------------
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState<AdminCourse[]>([]);
@@ -756,15 +818,15 @@ export default function AdminCourses() {
       type: "presencial",
       duration: "",
       description: "",
-      shortDescription: "",
+      shortDescription: "", 
       content: [],
       benefits: [],
       price: 0,
       promoPrice: null,
       workload: "",
       imageUrl: "",
-      isFeatured: false,
       active: true,
+      // isFeatured removido
     });
   }
 
@@ -776,14 +838,17 @@ export default function AdminCourses() {
   async function handleSaveCourse(course: AdminCourse) {
     setSaving(true);
     try {
+      // Garantimos que isFeatured seja enviado como false ao banco, já que foi removido do UI
+      const payloadWithFeature = { ...course, isFeatured: false };
+
       if (isCreating) {
-        const { id, ...payload } = course;
-        const created = await courseService.create(payload);
+        const { id, ...payload } = payloadWithFeature;
+        const created = await courseService.create(payload as Course);
         setCourses((prev) => [...prev, normalizeCourse(created)]);
         toast.success("Curso criado com sucesso!");
       } else {
-        const { id, ...payload } = course;
-        const updated = await courseService.update(course.id, payload);
+        const { id, ...payload } = payloadWithFeature;
+        const updated = await courseService.update(course.id, payload as Course);
         setCourses((prev) =>
           prev.map((c) =>
             c.id === course.id ? normalizeCourse(updated) : c
@@ -807,7 +872,8 @@ export default function AdminCourses() {
 
   async function handleDuplicateCourse(course: AdminCourse) {
     try {
-      const duplicated = await courseService.duplicate(course as Course);
+      // Temos que adicionar isFeatured para o service aceitar, mesmo que seja sempre false
+      const duplicated = await courseService.duplicate({...course, isFeatured: false} as Course);
       setCourses((prev) => [...prev, normalizeCourse(duplicated)]);
       toast.success("Curso duplicado com sucesso!");
     } catch (error: any) {
@@ -846,12 +912,9 @@ export default function AdminCourses() {
         );
         toast.success("Curso excluído com sucesso.");
       } else if (confirmActionType === "toggle") {
-        const newValue = await courseService.toggleActive(confirmCourse.id);
-        setCourses((prev) =>
-          prev.map((c) =>
-            c.id === confirmCourse.id ? { ...c, active: newValue } : c
-          )
-        );
+        await courseService.toggleActive(confirmCourse.id);
+        // Recarregamos a lista após a ação para refletir o novo estado.
+        loadCourses();
         toast.success("Visibilidade do curso atualizada.");
       }
       closeConfirm();
@@ -863,281 +926,297 @@ export default function AdminCourses() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-300 gap-3">
-        <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      <div className={`flex flex-col items-center justify-center h-full text-[${TEXT_COLOR}] gap-3 bg-[${DARK_SHADE}] p-8 rounded-xl`}>
+        <div className="w-8 h-8 border-4 border-zinc-500 border-t-transparent rounded-full animate-spin" style={{ borderColor: ACCENT_COLOR, borderTopColor: 'transparent' }} />
         <span className="text-sm">Carregando cursos...</span>
       </div>
     );
   }
 
+  // Helper para formatar preço/promoção na tabela
+  const renderPriceCell = (course: AdminCourse) => {
+    const price = course.price ?? 0;
+    const isPromoted = isCoursePromoted(course);
+
+    if (isPromoted) {
+        return (
+            <div className="flex flex-col">
+                <span className="text-[10px] text-zinc-400 line-through">
+                    R$ {price.toFixed(2)}
+                </span>
+                <span className="text-[13px] font-bold text-green-400"> {/* Verde para destaque de preço no Admin Dark */}
+                    R$ {course.promoPrice!.toFixed(2)}
+                </span>
+            </div>
+        );
+    }
+    // Exibimos o preço base para referência no Admin (R$ X,XX)
+    return (
+        <span className="text-[13px] text-zinc-200 font-medium">
+            R$ {price.toFixed(2)}
+        </span>
+    );
+  }
+
   return (
-    <div className="space-y-5">
-      {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center">
-            <PackageSearch size={18} className="text-white" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold">Gerenciar cursos</h1>
-            <span className="text-xs text-zinc-400">
-              {filteredCourses.length} curso(s) encontrado(s)
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button
-            type="button"
-            onClick={() => loadCourses(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800"
-          >
-            <RotateCw size={14} />
-            Atualizar lista
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              logout();
-              navigate("/");
+    <div className={`space-y-6 p-6 md:p-8 bg-[${DARK_BACKGROUND}] rounded-xl text-[${TEXT_COLOR}]`}>
+      <AnimatePresence mode="wait">
+        {/* Renderiza o formulário de edição ou a tabela */}
+        {editingCourse ? (
+          <CourseForm
+            key="course-form"
+            initialCourse={editingCourse}
+            isCreating={isCreating}
+            saving={saving}
+            onCancel={() => {
+              setEditingCourse(null);
+              setIsCreating(false);
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800"
-          >
-            <ExternalLink size={14} />
-            Voltar ao site
-          </button>
-
-          <button
-            type="button"
-            onClick={handleNewCourse}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-xs text-white shadow-md"
-          >
-            <Plus size={14} />
-            Novo curso
-          </button>
-        </div>
-      </div>
-
-      {/* Tabela ou Form */}
-      {editingCourse ? (
-        <CourseForm
-          initialCourse={editingCourse}
-          isCreating={isCreating}
-          saving={saving}
-          onCancel={() => {
-            setEditingCourse(null);
-            setIsCreating(false);
-          }}
-          onSubmit={handleSaveCourse}
-        />
-      ) : (
-        <>
-          <motion.div
-            initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.3, ease: [0.19, 1, 0.22, 1] }}
-            className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row gap-3 md:items-center md:justify-between"
-          >
-            <div className="flex items-center gap-2 flex-1">
-              <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center">
-                <Layers size={16} className="text-zinc-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-zinc-400 mb-1">
-                  Buscar por nome ou slug
-                </p>
-                <div className="flex items-center gap-2">
-                  <PackageSearch size={16} className="text-zinc-500" />
-                  <input
-                    type="text"
-                    placeholder="Digite para filtrar cursos..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
+            onSubmit={handleSaveCourse}
+          />
+        ) : (
+          <motion.div key="course-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+            {/* Cabeçalho */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
+              <div className="flex items-center gap-3">
+                <div 
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md`}
+                    style={{ background: `linear-gradient(to right, ${ACCENT_COLOR}, #d66a1f)` }}
+                >
+                  <PackageSearch size={20} className="text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <h1 className={`text-xl font-bold`} style={{ color: TEXT_COLOR }}>Gerenciar Cursos</h1>
+                  <span className="text-sm text-zinc-400">
+                    {filteredCourses.length} curso(s) encontrado(s)
+                  </span>
                 </div>
               </div>
-            </div>
 
-            <div className="flex flex-wrap gap-3 justify-end text-xs">
-              <div className="flex items-center gap-2">
-                <Filter size={14} className="text-zinc-500" />
-                <select
-                  value={filterType}
-                  onChange={(e) =>
-                    setFilterType(
-                      e.target.value as "all" | "presencial" | "ead"
-                    )
-                  }
-                  className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+              <div className="flex flex-wrap gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => loadCourses(true)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors shadow-sm"
                 >
-                  <option value="all">Todos os tipos</option>
-                  <option value="presencial">Presencial</option>
-                  <option value="ead">EAD</option>
-                </select>
-              </div>
+                  <RotateCw size={14} />
+                  Atualizar lista
+                </button>
 
-              <div className="flex items-center gap-2">
-                <Filter size={14} className="text-zinc-500" />
-                <select
-                  value={filterStatus}
-                  onChange={(e) =>
-                    setFilterStatus(
-                      e.target.value as "all" | "active" | "inactive"
-                    )
-                  }
-                  className="px-3 py-2 rounded-lg bg-zinc-950/60 border border-zinc-700 text-xs text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors shadow-sm"
                 >
-                  <option value="all">Todos</option>
-                  <option value="active">Ativos</option>
-                  <option value="inactive">Inativos</option>
-                </select>
+                  <ExternalLink size={14} />
+                  Sair do Admin
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNewCourse}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-white shadow-md transition-colors hover:bg-[#d66a1f]`}
+                  style={{ backgroundColor: ACCENT_COLOR }}
+                >
+                  <Plus size={16} />
+                  Novo curso
+                </button>
               </div>
             </div>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.35, ease: [0.19, 1, 0.22, 1] }}
-            className="bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden shadow-xl"
-          >
-            <table className="min-w-full text-xs">
-              <thead className="bg-zinc-950/80 text-zinc-400 uppercase tracking-wide">
-                <tr>
-                  <th className="px-4 py-3 text-left">Curso</th>
-                  <th className="px-4 py-3 text-left">Tipo</th>
-                  <th className="px-4 py-3 text-left">Preço</th>
-                  <th className="px-4 py-3 text-left">Status</th>
-                  <th className="px-4 py-3 text-left">Destaque</th>
-                  <th className="px-4 py-3 text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCourses.map((course) => {
-                  const activeFlag = course.active ?? true;
-                  const onPromo =
-                    course.promoPrice !== null &&
-                    course.promoPrice !== undefined &&
-                    Number(course.promoPrice) > 0;
+            {/* Filtros e Busca - CORREÇÃO DE ALINHAMENTO */}
+            <div 
+                className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl p-4 grid grid-cols-1 md:grid-cols-7 gap-4 items-end shadow-sm`}
+            >
+              
+              {/* BUSCA */}
+              <div className="flex flex-col gap-1 col-span-1 md:col-span-4">
+                <p className="text-xs text-zinc-400 font-semibold uppercase">
+                    Buscar por nome ou slug
+                </p>
+                <div className="flex items-center gap-2">
+                    <PackageSearch size={16} className="text-zinc-500 flex-shrink-0" />
+                    <input
+                      type="text"
+                      placeholder="Digite para filtrar cursos..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] placeholder:text-zinc-600`}
+                    />
+                </div>
+              </div>
 
-                  return (
-                    <motion.tr
-                      key={course.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="border-t border-zinc-800/80 hover:bg-zinc-900/60"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                          <span className="font-medium text-[13px]">
-                            {course.name}
-                          </span>
-                          <span className="text-[11px] text-zinc-500">
-                            {course.slug}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-zinc-950/70 border border-zinc-700">
-                          <Layers size={12} />
-                          {course.type === "presencial" ? "Presencial" : "EAD"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-col">
-                          <span className="text-[13px] text-zinc-100">
-                            R$ {Number(course.price ?? 0).toFixed(2)}
-                          </span>
-                          {onPromo && (
-                            <span className="text-[11px] text-green-400">
-                              Promo: R${" "}
-                              {Number(course.promoPrice ?? 0).toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => openConfirm("toggle", course)}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border border-zinc-700 bg-zinc-950/70 hover:bg-zinc-900"
-                          title={
-                            activeFlag
-                              ? "Clique para desativar este curso"
-                              : "Clique para ativar este curso"
-                          }
-                        >
-                          {activeFlag ? (
-                            <>
-                              <Eye size={12} className="text-green-400" />
-                              Ativo
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff size={12} className="text-zinc-400" />
-                              Inativo
-                            </>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        {course.isFeatured && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-orange-500/20 text-orange-300 border border-orange-500/50">
-                            <Star size={12} />
-                            Destaque
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleEditCourse(course)}
-                            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100"
-                            title="Editar curso"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDuplicateCourse(course)}
-                            className="p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100"
-                            title="Duplicar curso"
-                          >
-                            <Copy size={14} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openConfirm("delete", course)}
-                            className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white"
-                            title="Excluir curso"
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
+              {/* FILTRO TIPO */}
+              <div className="flex flex-col gap-1 col-span-1 md:col-span-2">
+                  <p className="text-xs text-zinc-400 font-semibold uppercase">
+                      Modalidade
+                  </p>
+                  <div className="flex items-center gap-2">
+                      <Filter size={16} className="text-zinc-500 flex-shrink-0" />
+                      <select
+                          value={filterType}
+                          onChange={(e) => setFilterType(e.target.value as "all" | "presencial" | "ead")}
+                          className={`w-full px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] appearance-none cursor-pointer`}
+                      >
+                          <option value="all">Todos os tipos</option>
+                          <option value="presencial">Presencial</option>
+                          <option value="ead">EAD</option>
+                      </select>
+                  </div>
+              </div>
+              
+              {/* FILTRO STATUS */}
+              <div className="flex flex-col gap-1 col-span-1 md:col-span-1">
+                  <p className="text-xs text-zinc-400 font-semibold uppercase">
+                      Status
+                  </p>
+                  <div className="flex items-center gap-2">
+                      <select
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value as "all" | "active" | "inactive")}
+                          className={`w-full px-3 py-2 rounded-lg bg-zinc-900/60 border border-zinc-700 text-sm text-[${TEXT_COLOR}] focus:outline-none focus:ring-2 focus:ring-[${ACCENT_COLOR}] appearance-none cursor-pointer`}
+                      >
+                          <option value="all">Todos</option>
+                          <option value="active">Ativos</option>
+                          <option value="inactive">Inativos</option>
+                      </select>
+                  </div>
+              </div>
+            </div>
 
-                {filteredCourses.length === 0 && (
+            {/* Tabela de Cursos */}
+            <div 
+                className={`bg-[${DARK_SHADE}] border border-zinc-700 rounded-xl overflow-hidden shadow-sm`}
+            >
+              <table className="min-w-full text-sm">
+                <thead className={`bg-[${INPUT_BG}] text-zinc-400 uppercase tracking-wide font-semibold`}>
                   <tr>
-                    <td
-                      colSpan={6}
-                      className="px-4 py-6 text-center text-xs text-zinc-500"
-                    >
-                      Nenhum curso encontrado com os filtros atuais.
-                    </td>
+                    <th className="px-4 py-3 text-left">Curso</th>
+                    <th className="px-4 py-3 text-left">Tipo</th>
+                    <th className="px-4 py-3 text-left">Preço (Ref.)</th>
+                    <th className="px-4 py-3 text-left">Status</th>
+                    <th className="px-4 py-3 text-left">Promoção</th> {/* Coluna Destaque renomeada para Promoção */}
+                    <th className="px-4 py-3 text-right">Ações</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  <AnimatePresence initial={false}>
+                    {filteredCourses.map((course) => {
+                      const activeFlag = course.active ?? true;
+                      const isPromoted = isCoursePromoted(course);
+
+                      return (
+                        <motion.tr
+                          key={course.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -50 }}
+                          transition={{ duration: 0.25 }}
+                          className="border-t border-zinc-800 hover:bg-zinc-800/80"
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex flex-col">
+                              <span className={`font-medium text-[14px]`} style={{ color: TEXT_COLOR }}>
+                                {course.name}
+                              </span>
+                              <span className="text-[11px] text-zinc-500">
+                                {course.slug}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-zinc-900 border border-zinc-700 text-zinc-300">
+                              <Layers size={12} />
+                              {course.type === "presencial" ? "Presencial" : "EAD"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {renderPriceCell(course)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              type="button"
+                              onClick={() => openConfirm("toggle", course)}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] border transition-colors ${
+                                activeFlag ? 'bg-green-600/20 text-green-400 border-green-700 hover:bg-green-600/30' : 'bg-zinc-800/80 text-zinc-400 border-zinc-700 hover:bg-zinc-800'
+                              }`}
+                              title={activeFlag ? "Clique para desativar este curso" : "Clique para ativar este curso"}
+                            >
+                              {activeFlag ? (
+                                <>
+                                  <Eye size={12} className="text-green-400" />
+                                  Ativo
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff size={12} className="text-zinc-400" />
+                                  Inativo
+                                </>
+                              )}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3">
+                            {isPromoted ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] bg-red-600/20 text-red-400 border border-red-700">
+                                    <Tag size={12} />
+                                    Ativa!
+                                </span>
+                            ) : (
+                                <span className="text-zinc-500">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleEditCourse(course)}
+                                className={`p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors`}
+                                title="Editar curso"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDuplicateCourse(course)}
+                                className={`p-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-100 transition-colors`}
+                                title="Duplicar curso"
+                              >
+                                <Copy size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openConfirm("delete", course)}
+                                className="p-2 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors shadow-md"
+                                title="Excluir curso"
+                              >
+                                <Trash size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+                      );
+                    })}
+
+                    {filteredCourses.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={6}
+                          className="px-4 py-6 text-center text-sm text-zinc-500"
+                        >
+                          Nenhum curso encontrado com os filtros atuais.
+                        </td>
+                      </tr>
+                    )}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            </div>
           </motion.div>
-        </>
-      )}
+        )}
+      </AnimatePresence>
 
       <ConfirmModal
         open={!!confirmActionType && !!confirmCourse}
