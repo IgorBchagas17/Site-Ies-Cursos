@@ -8,7 +8,7 @@ import { Course } from '../types';
 import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 
-// Sanitização local (opcional, pois o service já faz, mas mal não faz)
+// Sanitização local
 function sanitizeInput(dirtyString: string): string {
     return DOMPurify.sanitize(dirtyString);
 }
@@ -71,9 +71,7 @@ export function Contact() {
 
             const phoneValue = formData.phone || '';
 
-            // --- CORREÇÃO AQUI ---
-            // Mapeamos os nomes do formulário (course, contactTime) 
-            // para os nomes que o Banco de Dados/Service esperam (curso_interesse, horario_interesse)
+            // Mapeamos os nomes do formulário para o service
             const payloadToSend = {
                 nome: sanitizeInput(formData.name),
                 telefone: phoneValue.replace(/\D/g, ""), // Remove tudo que não é número
@@ -90,10 +88,10 @@ export function Contact() {
             const whatsappMessage = `Olá, meu nome é ${payloadToSend.nome}, gostaria de saber mais sobre o curso de ${payloadToSend.curso_interesse}. Meu telefone é ${formData.phone}.`;
             const whatsappUrl = `https://wa.me/5538988630487?text=${encodeURIComponent(whatsappMessage)}`;
 
-            // Pequeno delay para garantir que o toast apareça antes de abrir a nova aba
+            // Pequeno delay
             setTimeout(() => {
                 window.open(whatsappUrl, '_blank');
-                // Limpa o formulário após o envio bem-sucedido
+                // Limpa o formulário
                 setFormData({
                     name: '',
                     phone: '',
@@ -111,12 +109,14 @@ export function Contact() {
         }
     };
 
-    // Estilos (mantidos)
-    const sectionClasses = "py-20 bg-gray-900 text-white";
-    const cardClasses = "bg-white p-8 lg:p-12 rounded-xl shadow-2xl";
-    const titleClasses = "text-3xl lg:text-4xl font-bold text-gray-900 mb-6";
+    // Estilos
+    const sectionClasses = "py-12 lg:py-20 bg-gray-900 text-white";
+    const cardClasses = "bg-white p-6 lg:p-12 rounded-xl shadow-2xl";
+    const titleClasses = "text-2xl lg:text-4xl font-bold text-gray-900 mb-6";
     const inputClasses = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E45B25] focus:border-[#E45B25] transition duration-150 text-gray-800";
-    const buttonClasses = "w-full bg-[#E45B25] text-white py-4 rounded-lg font-bold text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed";
+    
+    // AQUI ESTÁ A CORREÇÃO: Adicionado 'px-6' e 'text-center'
+    const buttonClasses = "w-full bg-[#E45B25] text-white py-3 px-6 lg:py-4 rounded-lg font-bold text-sm sm:text-base lg:text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed text-center";
 
     return (
         <section id="contact" className={sectionClasses}>
@@ -128,10 +128,10 @@ export function Contact() {
                         <span className="text-[#E45B25] font-semibold text-lg uppercase tracking-wider">
                             Fale Conosco
                         </span>
-                        <h2 className="text-4xl lg:text-5xl font-bold leading-tight text-white">
+                        <h2 className="text-3xl lg:text-5xl font-bold leading-tight text-white">
                             Vamos tirar suas dúvidas e te ajudar a escolher o curso ideal.
                         </h2>
-                        <p className="text-xl text-gray-400">
+                        <p className="text-lg lg:text-xl text-gray-400">
                             Preencha o formulário para que um de nossos consultores entre em contato com você via WhatsApp.
                         </p>
 
@@ -265,7 +265,7 @@ export function Contact() {
                                     </>
                                 ) : (
                                     <>
-                                        <Send className="w-5 h-5" />
+                                        <Send className="w-5 h-5 flex-shrink-0" />
                                         Enviar e receber contato pelo WhatsApp
                                     </>
                                 )}

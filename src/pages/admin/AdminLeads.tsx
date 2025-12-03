@@ -1,7 +1,7 @@
 // src/pages/admin/AdminLeads.tsx
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, Loader2, ExternalLink } from "lucide-react";
+import { Users, Phone, Clock, Layers, MessageCircle, CheckCircle, XCircle, RotateCw, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { leadService } from "../../services/leadService";
 import { createPortal } from "react-dom";
@@ -173,7 +173,7 @@ export default function AdminLeads() {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-zinc-300 gap-3">
-                <Loader2 className="animate-spin text-orange-500" size={32} />
+                <RotateCw className="animate-spin text-orange-500" size={32} />
                 <span className="text-sm">Carregando leads...</span>
             </div>
         );
@@ -214,7 +214,7 @@ export default function AdminLeads() {
                         onClick={() => loadLeads(true)}
                         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-zinc-700 text-xs text-zinc-200 hover:bg-zinc-800 transition-colors"
                     >
-                        <Loader2 size={14} />
+                        <RotateCw size={14} />
                         Atualizar Lista
                     </button>
                 </div>
