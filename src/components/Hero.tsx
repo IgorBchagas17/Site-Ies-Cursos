@@ -111,7 +111,7 @@ export function Hero() {
                             dragMomentum={false}
                             onDragEnd={handleDragEnd}
                             // CORREÇÃO APLICADA AQUI: cursor-grab no mobile, lg:cursor-default no desktop
-                            className="absolute inset-0 w-full h-full bg-gradient-to-br from-black via-[#A8430F] to-black flex items-center cursor-grab active:cursor-grabbing lg:cursor-default touch-pan-y"
+                            className="absolute inset-0 w-full h-full bg-gradient-to-br from-black via-[#ff5722] to-black flex items-center cursor-grab active:cursor-grabbing lg:cursor-default touch-pan-y"
                         >
                             <div className="container mx-auto px-4 lg:px-12 pointer-events-none md:pointer-events-auto">
                                 <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -124,7 +124,7 @@ export function Hero() {
                                             transition={{ delay: 0.2 }}
                                             className="inline-block"
                                         >
-                                            <span className="bg-[#A8430F] text-white px-4 py-2 rounded-full text-xs lg:text-sm font-bold uppercase tracking-wide shadow-lg">
+                                            <span className="bg-[#ff5722] text-white px-4 py-2 rounded-full text-xs lg:text-sm font-bold uppercase tracking-wide shadow-lg">
                                                 Transforme sua carreira
                                             </span>
                                         </motion.div>
@@ -136,7 +136,7 @@ export function Hero() {
                                             className="text-4xl sm:text-5xl lg:text-7xl font-extrabold leading-tight tracking-tight"
                                         >
                                             Transforme seu futuro com a{' '}
-                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B00] to-[#FF9E40]">
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#ff5722] to-[#F27A24]">
                                                 IesCursos
                                             </span>
                                         </motion.h1>
@@ -158,7 +158,7 @@ export function Hero() {
                                         >
                                             {['Certificado reconhecido', 'Professores qualificados', 'Aulas práticas'].map((item, i) => (
                                                 <li key={i} className="flex items-center gap-3 text-sm lg:text-base text-zinc-200">
-                                                    <div className="bg-[#A8430F]/20 p-1 rounded-full">
+                                                    <div className="bg-[#ff5722]/20 p-1 rounded-full">
                                                         <Check className="w-4 h-4 text-[#FF6B00]" />
                                                     </div>
                                                     {item}
@@ -174,7 +174,7 @@ export function Hero() {
                                         >
                                             <button
                                                 onClick={() => scrollToSection('contact')}
-                                                className="pointer-events-auto group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white transition-all duration-200 bg-[#A8430F] rounded-full hover:bg-[#d66a1f] hover:scale-105 shadow-[0_0_20px_rgba(168,67,15,0.5)]"
+                                                className="pointer-events-auto group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white transition-all duration-200 bg-[#ff5722] rounded-full hover:bg-[#d66a1f] hover:scale-105 shadow-[0_0_20px_rgba(168,67,15,0.5)]"
                                             >
                                                 Matricule-se agora
                                                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -191,7 +191,7 @@ export function Hero() {
                                                 alt="Estudante"
                                                 className="w-full h-auto object-cover"
                                             />
-                                            <div className="absolute bottom-8 left-8 z-20 bg-[#A8430F]/90 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-lg">
+                                            <div className="absolute bottom-8 left-8 z-20 bg-[#ff5722]/90 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-lg">
                                                 <p className="text-3xl font-bold text-white">+5k</p>
                                                 <p className="text-xs text-white/80 uppercase tracking-wider">Alunos Formados</p>
                                             </div>
@@ -248,14 +248,14 @@ export function Hero() {
                     <>
                         <button 
                             onClick={() => paginate(-1)}
-                            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#A8430F] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#A8430F] group"
+                            className="hidden lg:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#ff5722] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#ff5722] group"
                         >
                             <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
                         </button>
                         
                         <button 
                             onClick={() => paginate(1)}
-                            className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#A8430F] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#A8430F] group"
+                            className="hidden lg:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-black/20 hover:bg-[#ff5722] text-white p-4 rounded-full transition-all backdrop-blur-sm border border-white/10 hover:border-[#ff5722] group"
                         >
                             <ChevronRight size={28} className="group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -271,7 +271,7 @@ export function Hero() {
                                     }}
                                     className={`h-2 rounded-full transition-all duration-300 shadow-sm ${
                                         currentIndex === idx 
-                                            ? 'bg-[#A8430F] w-8' 
+                                            ? 'bg-[#ff5722] w-8' 
                                             : 'bg-white/40 hover:bg-white w-2'
                                     }`}
                                     aria-label={`Ir para slide ${idx + 1}`}

@@ -24,7 +24,7 @@ import { useAuth } from "../../context/AuthContext";
 import { courseService } from "../../services/courseService";
 
 // Cores Padronizadas (Tema Escuro)
-const ACCENT_COLOR = "#E45B25"; // Laranja Principal
+const ACCENT_COLOR = "#F27A24"; // Laranja Principal
 const DARK_BACKGROUND = "#18181B"; // Fundo Principal (zinc-900)
 const DARK_SHADE = "#27272A"; // Fundo Secundário (zinc-800)
 const TEXT_COLOR = "#FAFAFA"; // Texto Claro (zinc-50)

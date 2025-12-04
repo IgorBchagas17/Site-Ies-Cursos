@@ -46,7 +46,7 @@ export function About() {
         >
           <div>
             {/* Cor de destaque moderna */}
-            <span className="text-[#E45B25] font-semibold text-lg">Diferenciais</span> 
+            <span className="text-[#ff5722] font-semibold text-lg">Diferenciais</span> 
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
               Por que estudar na IesCursos?
             </h2>
@@ -66,7 +66,7 @@ export function About() {
             >
               {/* Ícone com cor de destaque moderna */}
               <div
-                className="bg-[#E45B25] w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-colors duration-300"
+                className="bg-[#ff5722] w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-colors duration-300"
               >
                 <feature.icon className="w-8 h-8 text-white" />
               </div>
@@ -89,17 +89,17 @@ export function About() {
           <div className="grid lg:grid-cols-3 gap-8 text-center">
             {/* Bloco de números simples, sem motion */}
             <div>
-              <p className="text-5xl font-bold text-[#E45B25] mb-2">15+</p>
+              <p className="text-5xl font-bold text-[#ff5722] mb-2">15+</p>
               <p className="text-xl">Anos de experiência</p>
             </div>
 
             <div>
-              <p className="text-5xl font-bold text-[#E45B25] mb-2">5.000+</p>
+              <p className="text-5xl font-bold text-[#ff5722] mb-2">5.000+</p>
               <p className="text-xl">Alunos formados</p>
             </div>
 
             <div>
-              <p className="text-5xl font-bold text-[#E45B25] mb-2">98%</p>
+              <p className="text-5xl font-bold text-[#ff5722] mb-2">98%</p>
               <p className="text-xl">Satisfação dos alunos</p>
             </div>
           </div>

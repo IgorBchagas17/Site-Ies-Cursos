@@ -3,7 +3,7 @@
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from 'lucide-react';
 import logo from "./img/logo-ies-not-background-2.png"; // Ajuste o caminho conforme o seu projeto
 
-const ACCENT_COLOR = "#E45B25"; // Laranja forte
+const ACCENT_COLOR = "#ff5722"; // Laranja forte
 
 export function Footer() {
   return (

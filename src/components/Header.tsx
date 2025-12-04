@@ -14,7 +14,7 @@ export function Header() {
     const [hidden, setHidden] = useState(false);
 
     // Cor de Destaque
-    const ACCENT_COLOR = "#E45B25"; // Laranja
+    const ACCENT_COLOR = "#ff5722"; // Laranja
     
     // DADOS WHATSAPP (Ajustados para o número e mensagem padrão)
     const WHATSAPP_NUMBER = "5538988630487"; 
@@ -202,7 +202,7 @@ export function Header() {
                         {/* 1. INÍCIO */}
                         <button 
                             onClick={() => scrollToSection("hero")} 
-                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#F27A24] transition-colors border-b border-white/10"
                         >
                             <Home className="w-6 h-6" /> Início
                         </button>
@@ -211,7 +211,7 @@ export function Header() {
                         <div className="border-b border-white/10 pb-4">
                              <button
                                 onClick={() => setIsCoursesDropdownOpen(!isCoursesDropdownOpen)}
-                                className={`flex justify-between items-center w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors`}
+                                className={`flex justify-between items-center w-full py-3 text-lg font-semibold text-white hover:text-[#F27A24] transition-colors`}
                             >
                                 Cursos <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isCoursesDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
                             </button>
@@ -223,7 +223,7 @@ export function Header() {
                                     <button
                                         key={index}
                                         onClick={option.action}
-                                        className="block w-full text-left pl-6 py-2 text-base text-gray-300 hover:text-[#E45B25] transition-colors"
+                                        className="block w-full text-left pl-6 py-2 text-base text-gray-300 hover:text-[#F27A24] transition-colors"
                                     >
                                         {option.label}
                                     </button>
@@ -234,7 +234,7 @@ export function Header() {
                         {/* 3. MOMENTOS */}
                         <button
                             onClick={goToMoments}
-                            className={`flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10`} 
+                            className={`flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#F27A24] transition-colors border-b border-white/10`} 
                         >
                             <Camera className="w-6 h-6" /> Momentos
                         </button>
@@ -242,7 +242,7 @@ export function Header() {
                         {/* 4. SOBRE */}
                         <button 
                             onClick={() => scrollToSection("about")} 
-                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#F27A24] transition-colors border-b border-white/10"
                         >
                             <Info className="w-6 h-6" /> Sobre a IesCursos
                         </button>
@@ -250,7 +250,7 @@ export function Header() {
                         {/* 5. CONTATO */}
                         <button 
                             onClick={() => scrollToSection("contact")} 
-                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#F27A24] transition-colors border-b border-white/10"
                         >
                             <Phone className="w-6 h-6" /> Fale Conosco
                         </button>

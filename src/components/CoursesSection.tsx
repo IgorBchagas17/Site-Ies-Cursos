@@ -42,8 +42,8 @@ export function CoursesSection({
   ).slice(0, 4);
 
   const buttonClasses =
-    "inline-flex items-center justify-center px-6 py-3 border border-[#A8430F] text-base font-medium " +
-    "rounded-md text-[#A8430F] bg-white hover:bg-[#A8430F] hover:text-white " +
+    "inline-flex items-center justify-center px-6 py-3 border border-[#ff5722] text-base font-medium " +
+    "rounded-md text-[#ff5722] bg-white hover:bg-[#ff5722] hover:text-white " +
     "sm:py-4 sm:text-lg sm:px-10 transition duration-150";
 
   return (
@@ -61,7 +61,7 @@ export function CoursesSection({
             transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
             className="text-center mb-8 sm:mb-12"
           >
-            <span className="text-[#A8430F] font-semibold text-base sm:text-lg">
+            <span className="text-[#ff5722] font-semibold text-base sm:text-lg">
               Cursos em Destaque
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
@@ -99,7 +99,7 @@ export function CoursesSection({
               transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
               className="text-center mb-8 sm:mb-12"
             >
-              <span className="text-[#A8430F] font-semibold text-base sm:text-lg">
+              <span className="text-[#ff5722] font-semibold text-base sm:text-lg">
                 Cursos EAD
               </span>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">

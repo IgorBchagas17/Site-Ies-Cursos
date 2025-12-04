@@ -15,7 +15,7 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
   const [, setHover] = useState(false);
 
   // Cores padronizadas e Lógica de Promoção
-  const ACCENT_COLOR = "#E45B25"; 
+  const ACCENT_COLOR = "#ff5722"; 
   const PROMO_COLOR = "#dc2626"; // Vermelho forte (Red 600)
   
   const price = course.price ?? 0;
@@ -52,7 +52,7 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
       )}
 
       {/* Topo colorido */}
-      <div className="h-48 bg-gradient-to-br from-[#A8430F] to-[#d66a1f] relative overflow-hidden">
+      <div className="h-48 bg-gradient-to-br from-[#ff5722] to-[#d66a1f] relative overflow-hidden">
         <div
           className="absolute inset-0 flex items-center justify-center opacity-30"
         >
@@ -65,7 +65,7 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
 
         {/* Badge de modalidade */}
         <span
-          className="absolute top-4 right-4 bg-white text-[#A8430F] px-3 py-1 rounded-full text-sm font-semibold shadow z-20"
+          className="absolute top-4 right-4 bg-white text-[#ff5722] px-3 py-1 rounded-full text-sm font-semibold shadow z-20"
         >
           {isPresencial ? 'Presencial' : 'EAD'}
         </span>
@@ -89,14 +89,14 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
           className="space-y-3 mb-6"
         >
           <div className="flex items-center gap-2 text-gray-700">
-            <Clock className="w-5 h-5 text-[#A8430F]" />
+            <Clock className="w-5 h-5 text-[#ff5722]" />
             <span className="text-sm">
               <strong>Duração:</strong> {course.duration}
             </span>
           </div>
 
           <div className="flex items-center gap-2 text-gray-700">
-            <Award className="w-5 h-5 text-[#A8430F]" />
+            <Award className="w-5 h-5 text-[#ff5722]" />
             <span className="text-sm">
               <strong>Carga horária:</strong> {course.workload}
             </span>
@@ -114,7 +114,7 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
                 <p className="text-sm text-gray-500 font-semibold mb-1">
                   DE: <span className="text-base font-medium text-gray-400 line-through">R$ {price.toFixed(2)}</span>
                 </p>
-                <p className="text-2xl sm:text-3xl font-bold" style={{ color: PROMO_COLOR }}>
+                <p className="text-2xl sm:text-3xl font-bold" style={{ color: ACCENT_COLOR }}>
                   POR R$ {promoPrice!.toFixed(2)}
                 </p>
               </div>
@@ -134,7 +134,7 @@ export function CourseCard({ course, onLearnMore }: CourseCardProps) {
               e.stopPropagation(); // Evita que o click suba para o card pai
               onLearnMore(course);
             }}
-            className="w-full bg-[#A8430F] text-white py-3 rounded-lg font-semibold hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 group"
+            className="w-full bg-[#ff5722] text-white py-3 rounded-lg font-semibold hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 group"
           >
             {isPromoted ? 'GARANTA SUA VAGA' : 'Saiba mais'}
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

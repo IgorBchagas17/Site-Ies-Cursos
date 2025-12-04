@@ -1,6 +1,6 @@
 // src/components/CourseModal.tsx
 
-import { useEffect } from 'react'; // Adicionei o import do useEffect
+import { useEffect } from 'react'; 
 import { X, Check, Clock, Award, MapPin, Monitor, DollarSign } from 'lucide-react';
 import { Course } from '../types';
 import { motion, Variants } from 'framer-motion';
@@ -10,51 +10,49 @@ interface CourseModalProps {
   onClose: () => void;
 }
 
-// Variantes de animação (Otimizadas)
+// Variantes de animação (Otimizadas para PERFORMANCE MÁXIMA)
+
 const overlayVariants: Variants = {
   hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 }
+  visible: { opacity: 1, transition: { duration: 0.25 } }, // Torna a transição da opacidade mais rápida
+  exit: { opacity: 0, transition: { duration: 0.15 } }
 };
 
 const modalVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  hidden: { opacity: 0, y: 50 }, // Aumentei o 'y' para um efeito mais visível, mas sem scale
   visible: { 
     opacity: 1, 
-    scale: 1, 
     y: 0,
     transition: { 
-      type: "spring",
-      damping: 25, 
-      stiffness: 300,
-      staggerChildren: 0.1,
-      delayChildren: 0.2
+      type: "tween", // TROCADO DE 'spring' PARA 'tween' (Mais leve)
+      duration: 0.35, // Tempo ideal para parecer rápido, mas não brusco
+      ease: [0.4, 0, 0.2, 1], // Curva de aceleração do Material Design (Smooth)
+      staggerChildren: 0.05, // Reduzi o staggerChildren (cascata) para ser mais rápido
+      delayChildren: 0.1
     }
   },
   exit: { 
     opacity: 0, 
-    scale: 0.95, 
-    y: 20,
+    y: 50, // Volta para baixo
     transition: { duration: 0.2 }
   }
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 10 },
+  hidden: { opacity: 0, y: 15 }, // Reduzi a distância do Y para menor movimento
   visible: { 
     opacity: 1, 
     y: 0,
-    transition: { duration: 0.4, ease: "easeOut" }
+    transition: { duration: 0.3, ease: "easeOut" } // Reduzi a duração
   }
 };
 
 export function CourseModal({ course, onClose }: CourseModalProps) {
-  // Hook para travar o scroll da página de fundo
+  // Hook para travar o scroll da página de fundo (MANTIDO)
   useEffect(() => {
     if (course) {
       document.body.style.overflow = 'hidden';
     }
-    // Função de limpeza: roda quando o modal fecha
     return () => {
       document.body.style.overflow = 'unset';
     };
@@ -62,12 +60,12 @@ export function CourseModal({ course, onClose }: CourseModalProps) {
 
   if (!course) return null;
 
-  // Cores padronizadas
-  const ACCENT_COLOR = "#E45B25"; 
-  const PROMO_COLOR = "#dc2626";
+  // Cores padronizadas (MANTIDAS)
+  const ACCENT_COLOR = "#ff5722"; 
+  const PROMO_COLOR = "#ff5722";
   const TEXT_COLOR = "#1F2937"; 
 
-  // Lógica de Preço
+  // Lógica de Preço (MANTIDA)
   const price = course.price ?? 0;
   const promoPrice = course.promoPrice;
   const isPromoted = promoPrice !== null && promoPrice !== undefined && promoPrice > 0 && promoPrice < price;
@@ -90,13 +88,14 @@ Detalhes do Preço: ${priceText}
 Gostaria de falar com um consultor para mais informações sobre matrícula e formas de pagamento.`;
 
     // Telefone Fictício
-    const whatsappUrl = `https://wa.me/5511999999999?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/5538988630487?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const isPresencial = course.type === 'presencial';
 
   return (
+    // Mantendo o layout responsivo
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
       {/* Overlay escuro */}
       <motion.div
@@ -110,7 +109,6 @@ Gostaria de falar com um consultor para mais informações sobre matrícula e fo
 
       {/* Wrapper do Modal */}
       <motion.div
-        // Ajustes de layout responsivo mantidos
         className="relative w-full md:w-full max-w-[95%] md:max-w-4xl my-4 md:my-8 max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col mx-auto"
         variants={modalVariants}
         initial="hidden"

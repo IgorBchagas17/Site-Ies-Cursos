@@ -16,7 +16,7 @@ const ROWS_PER_PAGE = 5;
 const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE;
 
 // Cor de Destaque
-const ACCENT_COLOR = "#E45B25"; 
+const ACCENT_COLOR = "#F27A24"; 
 
 // Helper para checar se o curso está em promoção
 const isCoursePromoted = (course: Course) => {

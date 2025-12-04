@@ -113,10 +113,10 @@ export function Contact() {
     const sectionClasses = "py-12 lg:py-20 bg-gray-900 text-white";
     const cardClasses = "bg-white p-6 lg:p-12 rounded-xl shadow-2xl";
     const titleClasses = "text-2xl lg:text-4xl font-bold text-gray-900 mb-6";
-    const inputClasses = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E45B25] focus:border-[#E45B25] transition duration-150 text-gray-800";
+    const inputClasses = "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff5722] focus:border-[#ff5722] transition duration-150 text-gray-800";
     
     // AQUI ESTÁ A CORREÇÃO: Adicionado 'px-6' e 'text-center'
-    const buttonClasses = "w-full bg-[#E45B25] text-white py-3 px-6 lg:py-4 rounded-lg font-bold text-sm sm:text-base lg:text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed text-center";
+    const buttonClasses = "w-full bg-[#ff5722] text-white py-3 px-6 lg:py-4 rounded-lg font-bold text-sm sm:text-base lg:text-lg hover:bg-[#d66a1f] transition-colors flex items-center justify-center gap-2 shadow-lg disabled:bg-gray-500 disabled:shadow-none disabled:cursor-not-allowed text-center";
 
     return (
         <section id="contact" className={sectionClasses}>
@@ -125,7 +125,7 @@ export function Contact() {
 
                     {/* COLUNA ESQUERDA */}
                     <div className="space-y-8">
-                        <span className="text-[#E45B25] font-semibold text-lg uppercase tracking-wider">
+                        <span className="text-[#ff5722] font-semibold text-lg uppercase tracking-wider">
                             Fale Conosco
                         </span>
                         <h2 className="text-3xl lg:text-5xl font-bold leading-tight text-white">
@@ -137,15 +137,15 @@ export function Contact() {
 
                         <div className="space-y-4 pt-4">
                             <div className="flex items-center gap-4">
-                                <MapPin className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <MapPin className="w-7 h-7 text-[#ff5722] flex-shrink-0" />
                                 <span className="text-gray-300">Rua: Canabrava, : 100 - Centro, Unaí - MG, 38610-031</span>
                             </div>
                             <div className="flex items-center gap-4">
-                                <Phone className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <Phone className="w-7 h-7 text-[#ff5722] flex-shrink-0" />
                                 <span className="text-gray-300">(38) 98863-0487</span>
                             </div>
                             <div className="flex items-center gap-4">
-                                <Mail className="w-7 h-7 text-[#E45B25] flex-shrink-0" />
+                                <Mail className="w-7 h-7 text-[#ff5722] flex-shrink-0" />
                                 <span className="text-gray-300">iescursos@gmail.com.br</span>
                             </div>
                         </div>
@@ -154,7 +154,7 @@ export function Contact() {
                     {/* COLUNA DIREITA - FORMULÁRIO */}
                     <div className={cardClasses}>
                         <h3 className={titleClasses}>
-                            <MessageCircle className="inline-block w-8 h-8 mr-2 text-[#E45B25]" />
+                            <MessageCircle className="inline-block w-8 h-8 mr-2 text-[#ff5722]" />
                             Solicitar Contato
                         </h3>
 
@@ -245,7 +245,7 @@ export function Contact() {
                                     name="whatsapp"
                                     checked={formData.whatsapp}
                                     onChange={handleChange}
-                                    className="mt-1 h-5 w-5 text-[#E45B25] border-gray-300 rounded focus:ring-[#E45B25]"
+                                    className="mt-1 h-5 w-5 text-[#ff5722] border-gray-300 rounded focus:ring-[#ff5722]"
                                 />
                                 <label htmlFor="whatsappCheck" className="ml-2 block text-sm font-medium text-gray-700">
                                     Concordo em receber contato e informações do curso pelo WhatsApp.

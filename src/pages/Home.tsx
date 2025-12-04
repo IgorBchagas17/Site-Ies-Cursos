@@ -73,7 +73,7 @@ export default function Home() {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 rounded-md bg-[#A8430F] text-white font-semibold hover:bg-orange-700 transition"
+              className="px-6 py-3 rounded-md bg-[#ff5722] text-white font-semibold hover:bg-orange-700 transition"
             >
               Tentar novamente
             </button>

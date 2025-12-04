@@ -7,7 +7,7 @@ import { Moment } from "../../types";
 import { momentService, MomentEvent } from "../../services/momentService"; 
 import { supabase } from "../../lib/supabaseClient"; 
 
-const ACCENT_COLOR = "#E45B25"; 
+const ACCENT_COLOR = "#F27A24"; 
 const DARK_BACKGROUND = "#18181B"; 
 const DARK_SHADE = "#27272A"; 
 const TEXT_COLOR = "#FAFAFA"; 

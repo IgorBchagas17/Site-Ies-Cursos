@@ -14,7 +14,7 @@ import { MomentEvent, momentService } from '../services/momentService';
 // CONFIGURAÇÃO
 // =========================================================================
 const ITEMS_PER_PAGE = 12; 
-const ACCENT_COLOR = "#E45B25"; 
+const ACCENT_COLOR = "#F27A24"; 
 
 // Função auxiliar para identificar o tipo de mídia pela URL
 const getMediaType = (url: string) => {

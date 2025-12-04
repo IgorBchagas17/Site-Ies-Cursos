@@ -80,7 +80,7 @@ export default function AllCourses() {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 rounded-md bg-[#E45B25] text-white font-semibold hover:bg-[#d66a1f] transition mb-2"
+            className="px-6 py-3 rounded-md bg-[#F27A24] text-white font-semibold hover:bg-[#d66a1f] transition mb-2"
           >
             Tentar novamente
           </button>

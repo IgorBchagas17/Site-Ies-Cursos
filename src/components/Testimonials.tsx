@@ -14,7 +14,7 @@ export function Testimonials() {
           transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
           className="text-center mb-12"
         >
-          <span className="text-[#A8430F] font-semibold text-lg">Depoimentos</span>
+          <span className="text-[#ff5722] font-semibold text-lg">Depoimentos</span>
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
             O que nossos alunos dizem
           </h2>
@@ -44,13 +44,13 @@ export function Testimonials() {
               }}
               className="bg-white rounded-xl p-8 shadow-lg cursor-default"
             >
-              <Quote className="w-10 h-10 text-[#A8430F] mb-4" />
+              <Quote className="w-10 h-10 text-[#ff5722] mb-4" />
 
               <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star
                     key={i}
-                    className="w-5 h-5 fill-[#A8430F] text-[#A8430F]"
+                    className="w-5 h-5 fill-[#ff5722] text-[#ff5722]"
                   />
                 ))}
               </div>
