@@ -122,7 +122,7 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
     return (
         <div className="mt-4 p-4 bg-zinc-800 rounded-lg text-xs">
             <div className="flex flex-col sm:flex-row justify-between mb-1 text-zinc-400 gap-1">
-                <span>Uso do Storage (Imagens) <span className="hidden sm:inline">- Limite de 50 MB</span></span>
+                <span>Uso do armazenamento <span className="hidden sm:inline">- Limite de 50 MB</span></span>
                 <span className="font-semibold">{percentage.toFixed(1)}% ({formatSize(used)} / {formatSize(total)})</span>
             </div>
             <div className="w-full bg-zinc-700 rounded-full h-2.5">
@@ -139,7 +139,7 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
                 </div>
             )}
             <p className="mt-2 text-yellow-400 leading-relaxed">
-                **DICA:** Use YouTube/Vimeo/Instagram para mídias externas, pois não consomem espaço.
+                DICA: Use links para mídias externas, pois não consomem espaço.
             </p>
         </div>
     );

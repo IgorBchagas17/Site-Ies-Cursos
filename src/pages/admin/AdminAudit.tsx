@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Lock, AlertTriangle, User, TrendingUp, TrendingDown, RefreshCw, MapPin, CheckCircle, FileText, Calendar, Clock } from 'lucide-react';
+import { Lock, AlertTriangle, User, TrendingUp, TrendingDown, RefreshCw, MapPin, CheckCircle, FileText, Calendar, Clock, Image } from 'lucide-react'; // Adicionei Image para Moments/Banners
 import { auditService } from '../../services/auditService';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -105,7 +105,7 @@ export default function AdminAudit() {
         loadData();
     }, []);
     
-    // 🛑 LÓGICA DE FILTRAGEM (CORREÇÃO FINAL: FORÇANDO INTERPRETAÇÃO UTC NO LOG)
+    // LÓGICA DE FILTRAGEM (CORREÇÃO FINAL: FORÇANDO INTERPRETAÇÃO UTC NO LOG)
     const filteredAuditLogs = useMemo(() => {
         let list = auditLogs;
 
@@ -122,9 +122,7 @@ export default function AdminAudit() {
 
             // Filtra se o log.changed_at está DENTRO do intervalo [startDate, endDate[
             list = list.filter(log => {
-                // 🛑 CORREÇÃO CRÍTICA: TRATAMENTO DA STRING DE DATA DO BANCO
-                // Injetamos 'Z' (Zulu/UTC) para forçar o JavaScript a interpretar a data
-                // da string `YYYY-MM-DD HH:MM:SS` como UTC, e não como local.
+                // CORREÇÃO CRÍTICA: TRATAMENTO DA STRING DE DATA DO BANCO
                 const logDateString = log.changed_at.endsWith('Z') || log.changed_at.includes('+')
                     ? log.changed_at 
                     : log.changed_at.replace(' ', 'T') + 'Z';
@@ -151,22 +149,26 @@ export default function AdminAudit() {
     
     // Opções únicas para os Selects (Memoize para performance)
     const uniqueUserEmails = useMemo(() => {
-        // O valor 'all' é usado no estado, mas não deve aparecer como uma opção duplicada
         const emails = new Set(auditLogs.map(log => log.changed_by_user_email).filter(e => e && e !== 'all'));
-        return Array.from(emails).sort(); // Retorna apenas os emails válidos
+        return Array.from(emails).sort(); 
     }, [auditLogs]);
 
     const uniqueTables = useMemo(() => {
-        // O valor 'all' é usado no estado, mas não deve aparecer como uma opção duplicada
-        const tables = new Set(auditLogs.map(log => log.table_name).filter(t => t && t !== 'all'));
-        return Array.from(tables).sort(); // Retorna apenas as tabelas válidas
+        // CORREÇÃO AQUI: Garante que as novas tabelas estejam sempre na lista de filtros
+        const tables = new Set([
+            'banners', 
+            'moments', // NOVA TABELA ADICIONADA AQUI
+            ...auditLogs.map(log => log.table_name).filter(t => t && t !== 'all')
+        ]);
+        return Array.from(tables).sort(); 
     }, [auditLogs]);
+
 
     // Função auxiliar para formatação de data
     const formatDate = (dateString: string) => 
         new Date(dateString).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'medium' });
 
-    // Função para renderizar o User Agent
+    // Função para renderizar o User Agent (MANTIDA)
     const renderUserAgent = (userAgent: string | null | undefined) => {
         if (!userAgent || typeof userAgent !== 'string') {
             return (
@@ -186,7 +188,22 @@ export default function AdminAudit() {
         );
     };
 
-    // Variantes de animação para as linhas da tabela
+    // Função para identificar a tabela e renderizar o ícone correto
+    const getTableIcon = (tableName: string) => {
+        switch (tableName) {
+            case 'banners':
+                return <Image size={14} className="text-orange-400" />;
+            case 'moments':
+                return <Image size={14} className="text-purple-400" />;
+            case 'courses':
+                return <FileText size={14} className="text-green-400" />;
+            default:
+                return <FileText size={14} className="text-zinc-400" />;
+        }
+    }
+
+
+    // Variantes de animação para as linhas da tabela (MANTIDAS)
     const rowVariants = {
         hidden: { opacity: 0, y: 10 },
         visible: (i: number) => ({
@@ -277,7 +294,7 @@ export default function AdminAudit() {
                                                 </div>
                                                 <div className="flex items-center justify-between text-xs text-zinc-400 mt-1 pt-2 border-t border-zinc-800/50">
                                                     <span className="flex items-center gap-1 font-mono">
-                                                        <MapPin size={12} /> {log.attempt_ip}
+                                                         <MapPin size={12} /> {log.attempt_ip}
                                                     </span>
                                                     <span>{renderUserAgent(log.user_agent)}</span>
                                                 </div>
@@ -314,8 +331,8 @@ export default function AdminAudit() {
                                                             <td className="py-3 px-2 whitespace-nowrap text-sm font-mono">{log.attempted_username}</td>
                                                             <td className="py-3 px-2 whitespace-nowrap text-sm font-semibold">
                                                                 <span className={`inline-flex items-center gap-1 ${log.success ? 'text-green-500' : 'text-red-500'}`}>
-                                                                        {log.success ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
-                                                                        {log.success ? 'Sucesso' : 'Falha'}
+                                                                    {log.success ? <CheckCircle size={14} /> : <AlertTriangle size={14} />}
+                                                                    {log.success ? 'Sucesso' : 'Falha'}
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 px-2 text-sm">
@@ -423,13 +440,14 @@ export default function AdminAudit() {
                                                         {log.action_type}
                                                     </span>
                                                     <span className="text-xs text-zinc-500 flex items-center gap-1">
-                                                        <Clock size={12} />
-                                                        {formatDate(log.changed_at)}
+                                                         <Clock size={12} />
+                                                         {formatDate(log.changed_at)}
                                                     </span>
                                                 </div>
                                                 
                                                 <div className="flex flex-col gap-1">
-                                                    <span className="text-sm font-semibold text-white">
+                                                    <span className="text-sm font-semibold text-white flex items-center gap-2">
+                                                        {getTableIcon(log.table_name)} 
                                                         Tabela: <span className="text-orange-400">{log.table_name}</span>
                                                     </span>
                                                     <span className="text-xs text-zinc-400">
@@ -482,17 +500,20 @@ export default function AdminAudit() {
                                                             className="text-zinc-300 hover:bg-zinc-800/30 transition-colors"
                                                         >
                                                             <td className="py-3 px-2 whitespace-nowrap text-sm">{formatDate(log.changed_at)}</td>
-                                                            <td className="py-3 px-2 whitespace-nowrap text-sm font-semibold">{log.table_name}</td>
+                                                            <td className="py-3 px-2 whitespace-nowrap text-sm font-semibold flex items-center gap-2">
+                                                                {getTableIcon(log.table_name)} 
+                                                                {log.table_name}
+                                                            </td>
                                                             <td className="py-3 px-2 whitespace-nowrap text-sm font-semibold">
                                                                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs 
                                                                     ${log.action_type === 'DELETE' ? 'bg-red-800/50 text-red-300' :
                                                                     log.action_type === 'INSERT' ? 'bg-green-800/50 text-green-300' :
                                                                     'bg-blue-800/50 text-blue-300'}`
                                                                 }>
-                                                                        {log.action_type === 'INSERT' && <TrendingUp size={14} />}
-                                                                        {log.action_type === 'DELETE' && <TrendingDown size={14} />}
-                                                                        {log.action_type === 'UPDATE' && <RefreshCw size={14} />}
-                                                                        {log.action_type}
+                                                                    {log.action_type === 'INSERT' && <TrendingUp size={14} />}
+                                                                    {log.action_type === 'DELETE' && <TrendingDown size={14} />}
+                                                                    {log.action_type === 'UPDATE' && <RefreshCw size={14} />}
+                                                                    {log.action_type}
                                                                 </span>
                                                             </td>
                                                             <td className="py-3 px-2 text-sm font-mono truncate max-w-xs">{log.record_id}</td>

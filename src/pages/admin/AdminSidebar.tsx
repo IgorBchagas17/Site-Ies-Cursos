@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, BarChart, AlertTriangle, Camera, X } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, AlertTriangle, Camera, X } from "lucide-react";
 
 const menuItems = [
   {
@@ -14,7 +14,7 @@ const menuItems = [
   },
   { 
     label: "Clientes",
-    icon: BarChart,
+    icon: Users,
     to: "/ies-admin/leads",
   },
   {
