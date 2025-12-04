@@ -1,109 +1,151 @@
 // Footer.tsx - Versão com Cores e Estilo Moderno
 
+import { useState, useCallback } from 'react'; // Importamos useState e useCallback
+import { useNavigate } from 'react-router-dom'; // Importamos useNavigate
 import { MapPin, Phone, Mail, Clock, Instagram, Facebook } from 'lucide-react';
 import logo from "./img/logo-ies-not-background-2.png"; // Ajuste o caminho conforme o seu projeto
 
 const ACCENT_COLOR = "#ff5722"; // Laranja forte
 
+// Rota de Login Admin (Use a rota obscura se já a tiver definido, ex: /s-801-auth-xyz)
+const ADMIN_LOGIN_PATH = "/ies-admin/login"; 
+// Se você for usar a rota obscura BASE do nosso exemplo anterior, substitua por:
+// const ADMIN_LOGIN_PATH = "/s-801-auth-xyz"; 
+
 export function Footer() {
-  return (
-    <footer className="bg-black text-white">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          <div>
-            {/* LOGO */}
-            <div className="flex items-center gap-2 mb-4">
-              <img 
-                src={logo} 
-                alt="Logo IesCursos" 
-                className="h-12 w-auto" // Aumentado um pouco o tamanho da logo
-              />
-            </div>
-            <p className="text-gray-400 leading-relaxed">
-              Transformando vidas através da educação profissionalizante há mais de 9 anos.
-            </p>
-          </div>
+    // 1. ESTADO PARA CONTAR CLIQUES
+    const [clickCount, setClickCount] = useState(0);
+    
+    // 2. HOOK DE NAVEGAÇÃO
+    const navigate = useNavigate();
 
-          <div>
-            <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Links Úteis</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#hero" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Início</a>
-              </li>
-              <li>
-                <a href="#courses" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Cursos Presenciais</a>
-              </li>
-              <li>
-                <a href="#ead-courses" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Cursos EAD</a>
-              </li>
-              <li>
-                <a href="#about" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Sobre</a>
-              </li>
-              <li>
-                <a href="#contact" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Contato</a>
-              </li>
-              <li>
-                <a href="/momentos" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Momentos</a>
-              </li>
-            </ul>
-          </div>
+    // 3. FUNÇÃO CENTRAL DE CLIQUE
+    const handleLogoClick = useCallback(() => {
+        // Aumenta a contagem de cliques
+        const newCount = clickCount + 1;
+        setClickCount(newCount);
 
-          <div>
-            <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Contato</h3>
-            <div className="space-y-4">
-              <div className="flex items-start gap-2">
-                <MapPin className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">
-                  Rua: Canabrava, 100 - Centro, Unaí - MG, 38610-031
-                </p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Phone className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">(38) 98863-0487</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Mail className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">iescursosunai@gmail.com.br</p>
-              </div>
-            </div>
-          </div>
+        // Se atingiu 3 cliques, redireciona e reseta
+        if (newCount >= 3) {
+            navigate(ADMIN_LOGIN_PATH);
+            setClickCount(0); // Reseta a contagem
+        }
 
-          <div>
-            <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Horário</h3>
-            <div className="flex items-start gap-2 mb-4">
-              <Clock className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-              <div className="text-gray-400 text-sm">
-                <p>Segunda a Sexta: 08h às 21h</p>
-                <p>Sábado: 10h às 12h</p>
-              </div>
-            </div>
+        // Reseta o contador se não houver mais cliques em 1.5s
+        // Isso evita que o usuário clique 1x hoje e 2x amanhã para entrar.
+        const timer = setTimeout(() => {
+            setClickCount(0);
+        }, 1500); // 1.5 segundos para o tempo limite entre cliques
+        
+        // Limpa o timer para evitar re-renderizações desnecessárias
+        return () => clearTimeout(timer);
 
-            <h3 className={`text-lg font-bold mb-3 text-[${ACCENT_COLOR}]`}>Redes Sociais</h3>
-            <div className="flex gap-3">
-              <a
-                href="https://www.instagram.com/iescursos_unai/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[${ACCENT_COLOR}] transition-colors`}
-              >
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a
-                href="https://www.facebook.com/institutoeducacionalsela/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[${ACCENT_COLOR}] transition-colors`}
-              >
-                <Facebook className="w-5 h-5" />
-              </a>
-            </div>
-          </div>
-        </div>
+    }, [clickCount, navigate]); // Dependências: clickCount e navigate
 
-        <div className="border-t border-gray-800 pt-8 mt-8 text-center text-gray-500">
-          <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados.</p>
-        </div>
-      </div>
-    </footer>
-  );
+    return (
+        <footer className="bg-black text-white">
+            <div className="container mx-auto px-4 py-12">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                    <div>
+                        {/* LOGO - APLICANDO O CLIQUE AQUI */}
+                        <div 
+                            className="flex items-center gap-2 mb-4 cursor-pointer" // Adicionado cursor-pointer
+                            onClick={handleLogoClick} // Chama a função no clique
+                            title="Clique 3 vezes para acessar a área administrativa" // Dica discreta
+                        >
+                            <img 
+                                src={logo} 
+                                alt="Logo IesCursos" 
+                                className="h-12 w-auto" 
+                            />
+                        </div>
+                        <p className="text-gray-400 leading-relaxed">
+                            Transformando vidas através da educação profissionalizante há mais de 9 anos.
+                        </p>
+                    </div>
+                    
+                    {/* ... (Resto do Footer sem alterações) */}
+                    
+                    <div>
+                        <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Links Úteis</h3>
+                        <ul className="space-y-2">
+                            <li>
+                                <a href="#hero" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Início</a>
+                            </li>
+                            <li>
+                                <a href="#courses" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Cursos Presenciais</a>
+                            </li>
+                            <li>
+                                <a href="#ead-courses" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Cursos EAD</a>
+                            </li>
+                            <li>
+                                <a href="#about" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Sobre</a>
+                            </li>
+                            <li>
+                                <a href="#contact" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Contato</a>
+                            </li>
+                            <li>
+                                <a href="/momentos" className={`text-gray-400 hover:text-[${ACCENT_COLOR}] transition-colors`}>Momentos</a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Contato</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-start gap-2">
+                                <MapPin className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
+                                <p className="text-gray-400 text-sm">
+                                    Rua: Canabrava, 100 - Centro, Unaí - MG, 38610-031
+                                </p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <Phone className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
+                                <p className="text-gray-400 text-sm">(38) 98863-0487</p>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <Mail className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
+                                <p className="text-gray-400 text-sm">iescursosunai@gmail.com.br</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 className={`text-lg font-bold mb-4 text-[${ACCENT_COLOR}]`}>Horário</h3>
+                        <div className="flex items-start gap-2 mb-4">
+                            <Clock className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
+                            <div className="text-gray-400 text-sm">
+                                <p>Segunda a Sexta: 08h às 21h</p>
+                                <p>Sábado: 10h às 12h</p>
+                            </div>
+                        </div>
+
+                        <h3 className={`text-lg font-bold mb-3 text-[${ACCENT_COLOR}]`}>Redes Sociais</h3>
+                        <div className="flex gap-3">
+                            <a
+                                href="https://www.instagram.com/iescursos_unai/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[${ACCENT_COLOR}] transition-colors`}
+                            >
+                                <Instagram className="w-5 h-5" />
+                            </a>
+                            <a
+                                href="https://www.facebook.com/institutoeducacionalsela/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[${ACCENT_COLOR}] transition-colors`}
+                            >
+                                <Facebook className="w-5 h-5" />
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="border-t border-gray-800 pt-8 mt-8 text-center text-gray-500">
+                    <p>&copy; {new Date().getFullYear()} IesCursos. Todos os direitos reservados.</p>
+                </div>
+            </div>
+        </footer>
+    );
 }
