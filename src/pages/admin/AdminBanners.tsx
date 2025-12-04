@@ -516,19 +516,23 @@ export function AdminBanners() {
                 key={banner.id} 
                 value={banner}
                 className={`
-                  relative group border rounded-lg transition-colors bg-zinc-950 w-full h-auto
-                  flex items-center justify-between p-3
+                  relative group border rounded-lg transition-colors bg-zinc-950 w-full h-auto p-3 
+                  flex flex-col md:flex-row md:items-center md:justify-between 
                   ${!banner.ativo ? 'border-zinc-800 opacity-60 grayscale' : 'border-zinc-700'}
                 `}
               >
-                <div className='flex items-center gap-4 w-full min-w-0'>
+                
+                {/* 1. Área de Drag Handle + Miniaturas (Visível em todas as telas) */}
+                <div className='flex items-center gap-4 w-full min-w-0 md:w-auto md:flex-shrink-0'>
+                    {/* Drag Handle */}
                     <div className='text-zinc-600 hover:text-zinc-400 cursor-move flex-shrink-0 p-1'>
                         <GripVertical size={20} />
                     </div>
 
-                    <div className="flex items-end gap-2">
+                    {/* Previews Visuais */}
+                    <div className="flex items-end gap-2 flex-shrink-0">
                         {/* Desktop Thumb */}
-                        <div className="relative group/dt w-24 h-14 bg-zinc-900 rounded border border-zinc-800 overflow-hidden">
+                        <div className="relative group/dt w-20 h-12 md:w-24 md:h-14 bg-zinc-900 rounded border border-zinc-800 overflow-hidden">
                             <img src={banner.imagem_url} className="w-full h-full object-cover" alt="DT" />
                             <div className="absolute bottom-0 right-0 bg-black/60 p-0.5 rounded-tl">
                                 <Monitor size={10} className="text-white" />
@@ -536,12 +540,12 @@ export function AdminBanners() {
                         </div>
 
                         {/* Mobile Thumb (COM BOTÃO DE EXCLUIR) */}
-                        <div className="relative group/mob w-8 h-12 bg-zinc-900 rounded border border-zinc-800 overflow-hidden flex items-center justify-center">
+                        <div className="relative group/mob w-8 h-12 md:w-8 md:h-14 bg-zinc-900 rounded border border-zinc-800 overflow-hidden flex items-center justify-center">
                             {banner.mobile_image ? (
                                 <>
                                     <img src={banner.mobile_image} className="w-full h-full object-cover" alt="MB" />
                                     
-                                    {/* 🛑 BOTÃO DE ABRIR MODAL EXCLUIR MOBILE */}
+                                    {/* Botão de Excluir Mobile (Abre Modal) */}
                                     <button 
                                         onClick={() => handleRemoveMobile(banner)}
                                         className="absolute inset-0 bg-red-900/80 flex items-center justify-center opacity-0 group-hover/mob:opacity-100 transition-opacity z-10"
@@ -562,20 +566,22 @@ export function AdminBanners() {
                             )}
                         </div>
                     </div>
-
-                    <div className='flex flex-col min-w-0 flex-1'>
-                        <span className="text-sm font-semibold text-zinc-200 truncate">
-                            {banner.titulo || <span className="text-zinc-500 italic">Sem título definido</span>}
+                </div>
+                
+                {/* 2. Área de Título e Status (Empurrada para o centro no desktop) */}
+                <div className='flex flex-col min-w-0 flex-1 mt-3 md:mt-0 md:pl-4'>
+                    <span className="text-sm font-semibold text-zinc-200 truncate">
+                        {banner.titulo || <span className="text-zinc-500 italic">Sem título definido</span>}
+                    </span>
+                    <div className='flex items-center gap-2 mt-1'>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${banner.ativo ? 'bg-green-900/20 text-green-400 border-green-900/30' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
+                            {banner.ativo ? 'Publicado' : 'Rascunho'}
                         </span>
-                        <div className='flex items-center gap-2 mt-1'>
-                            <span className={`text-[10px] px-1.5 py-0.5 rounded border ${banner.ativo ? 'bg-green-900/20 text-green-400 border-green-900/30' : 'bg-zinc-800 text-zinc-500 border-zinc-700'}`}>
-                                {banner.ativo ? 'Publicado' : 'Rascunho'}
-                            </span>
-                        </div>
                     </div>
                 </div>
 
-                <div className='flex items-center gap-2 flex-shrink-0 ml-4'>
+                {/* 3. Área de Ações (Fica na mesma linha do drag handle no desktop, ou embaixo/canto no mobile) */}
+                <div className='flex items-center gap-2 flex-shrink-0 mt-3 md:mt-0'>
                     <button 
                         onClick={() => handleToggleActive(banner)}
                         className="p-2 bg-zinc-900 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white border border-zinc-800 transition-colors"

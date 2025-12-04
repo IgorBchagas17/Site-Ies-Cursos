@@ -1,7 +1,5 @@
-// src/pages/MomentsPage.tsx
-
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowLeft, Image, X, Globe, ExternalLink, MonitorPlay } from 'lucide-react'; 
+import { ArrowLeft, Image, Globe, ExternalLink, MonitorPlay, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -42,15 +40,13 @@ const getYoutubeThumbnailUrl = (url: string): string | null => {
 function MomentCard({ moment }: { moment: MomentEvent }) { 
     const [showModal, setShowModal] = useState(false);
     
-    // --- CORREÇÃO: SCROLL LOCK ---
-    // Impede que o site role quando o modal estiver aberto
+    // Scroll Lock
     useEffect(() => {
       if (showModal) {
         document.body.style.overflow = 'hidden';
       } else {
         document.body.style.overflow = 'unset';
       }
-      // Limpeza ao desmontar
       return () => {
         document.body.style.overflow = 'unset';
       };
@@ -143,7 +139,7 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
                 className="w-full max-w-5xl max-h-[95vh] flex flex-col items-center relative overflow-y-auto no-scrollbar"
                 onClick={(e) => e.stopPropagation()}
             >
-              {/* Botão Fechar (Posicionado fora do conteúdo rolável ou fixo no topo) */}
+              {/* Botão Fechar */}
               <button 
                 onClick={() => setShowModal(false)} 
                 className="absolute top-0 right-0 md:-right-4 md:top-0 text-white hover:text-gray-300 z-50 p-2 transition-colors bg-black/50 rounded-full md:bg-transparent"
@@ -151,7 +147,6 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
                 <X size={32} />
               </button>
               
-              {/* Espaçamento para o botão fechar não sobrepor conteúdo em mobile */}
               <div className="mt-10 md:mt-0 w-full flex flex-col items-center justify-center">
                 
                 {moment.type === 'image' ? (
@@ -193,7 +188,6 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
                   </div>
                 )}
 
-                {/* Botão para Link Externo (Estilo Laranja Solicitado) */}
                 {moment.type !== 'image' && (
                     <button
                         onClick={handleOpenExternal}
@@ -213,7 +207,7 @@ function MomentCard({ moment }: { moment: MomentEvent }) {
 }
 
 // =========================================================================
-// PÁGINA PRINCIPAL (Sem alterações na lógica)
+// PÁGINA PRINCIPAL
 // =========================================================================
 export default function MomentsPage() {
   const navigate = useNavigate();
@@ -281,23 +275,24 @@ export default function MomentsPage() {
         <div className="container mx-auto px-4">
           
           <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center">
-            <h1 className="text-5xl font-extrabold text-gray-900 mb-4 md:mb-0">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 md:mb-0">
               Nossos Momentos
             </h1>
             <button
               onClick={() => navigate('/')}
               className={`flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-[${ACCENT_COLOR}] transition-colors`}
             >
-              <ArrowLeft className="w-5 h-5" /> Voltar à Página Inicial
+              <ArrowLeft className="w-5 h-5" /> <span className="hidden md:inline">Voltar à Página Inicial</span> <span className="md:hidden">Voltar</span>
             </button>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-12 p-4 bg-white rounded-xl shadow-lg border border-gray-100">
+          {/* Categorias com Scroll Horizontal no Mobile */}
+          <div className="flex flex-nowrap md:flex-wrap overflow-x-auto pb-2 md:pb-6 justify-start md:justify-center gap-3 mb-12 p-4 md:p-6 bg-white rounded-xl shadow-lg border border-gray-100 custom-scrollbar">
             {categories.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => setActiveCategory(cat.value)}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 shadow-md ${
+                className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 shadow-md whitespace-nowrap flex-shrink-0 ${
                   activeCategory === cat.value
                     ? `bg-[${ACCENT_COLOR}] text-white shadow-md shadow-[${ACCENT_COLOR}]/30` 
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200" 
@@ -310,7 +305,7 @@ export default function MomentsPage() {
 
           {loading ? (
             <div className="text-center py-20 bg-white rounded-xl shadow-lg">
-                <p className="text-xl text-gray-500">Carregando momentos...</p>
+                <p className="text-xl text-gray-500 flex items-center justify-center gap-2"><Loader2 className="animate-spin"/> Carregando momentos...</p>
             </div>
           ) : error ? (
             <div className="text-center py-20 bg-white rounded-xl shadow-lg">
@@ -334,34 +329,49 @@ export default function MomentsPage() {
             </div>
           )}
 
+          {/* === PAGINAÇÃO RESPONSIVA === */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center space-x-2 mt-12">
+            <div className="flex justify-center items-center gap-3 mt-12 select-none">
+              {/* Botão Anterior */}
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                className="px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors flex items-center gap-1"
               >
-                Anterior
+                <ChevronLeft size={20} />
+                <span className="hidden md:inline">Anterior</span>
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => handlePageChange(p)}
-                  className={`w-10 h-10 border rounded-xl font-semibold transition duration-200 ${
-                    currentPage === p
-                      ? `bg-[${ACCENT_COLOR}] text-white border-[${ACCENT_COLOR}] shadow-md shadow-[${ACCENT_COLOR}]/30` 
-                      : "text-gray-700 hover:bg-gray-100 border-gray-300" 
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+
+              {/* MOBILE: Mostra texto "Pág X de Y" */}
+              <span className="md:hidden text-sm font-semibold text-gray-600">
+                 {currentPage} / {totalPages}
+              </span>
+
+              {/* DESKTOP: Mostra números das páginas */}
+              <div className="hidden md:flex gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handlePageChange(p)}
+                      className={`w-10 h-10 border rounded-xl font-semibold transition duration-200 ${
+                        currentPage === p
+                          ? `bg-[${ACCENT_COLOR}] text-white border-[${ACCENT_COLOR}] shadow-md shadow-[${ACCENT_COLOR}]/30` 
+                          : "text-gray-700 hover:bg-gray-100 border-gray-300" 
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+              </div>
+
+              {/* Botão Próxima */}
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                className="px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors flex items-center gap-1"
               >
-                Próxima
+                <span className="hidden md:inline">Próxima</span>
+                <ChevronRight size={20} />
               </button>
             </div>
           )}

@@ -1,7 +1,7 @@
 // src/components/Header.tsx
 
 import { useState, useEffect } from "react";
-import { Menu, X, ChevronDown, Camera } from "lucide-react"; 
+import { Menu, X, ChevronDown, Camera, Home, Info, Phone } from "lucide-react"; // Adicionei ícones para estética mobile
 import { useNavigate, useLocation } from "react-router-dom";
 import logo from "./img/logo-ies-not-background-2.png"; 
 
@@ -42,6 +42,19 @@ export function Header() {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Trava o scroll do body quando o menu está aberto (melhor UX mobile)
+    useEffect(() => {
+        if (isMenuOpen) {
+            document.body.style.overflowY = 'hidden';
+        } else {
+            document.body.style.overflowY = 'auto';
+        }
+        return () => {
+            document.body.style.overflowY = 'auto';
+        };
+    }, [isMenuOpen]);
+
 
     // Função centralizada de Scroll/Navegação (MANTIDA)
     const scrollToSection = (id: string, path = "/") => {
@@ -97,7 +110,7 @@ export function Header() {
                         <img src={logo} alt="Logo IesCursos" className="h-8 lg:h-10 w-auto" />
                     </div>
 
-                    {/* Navegação Desktop */}
+                    {/* Navegação Desktop (MANTIDA) */}
                     <nav className="hidden lg:flex items-center space-x-6 text-sm font-medium">
                         <button
                             onClick={() => scrollToSection("hero")}
@@ -128,7 +141,7 @@ export function Header() {
                                         <button
                                             key={index}
                                             onClick={option.action}
-                                            className="block w-full text-left px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 hover:text-[${ACCENT_COLOR}] transition-colors"
+                                            className={`block w-full text-left px-4 py-3 text-sm text-gray-800 hover:bg-gray-100 hover:text-[${ACCENT_COLOR}] transition-colors`}
                                         >
                                             {option.label}
                                         </button>
@@ -176,49 +189,84 @@ export function Header() {
                     </div>
                 </div>
 
-                {/* Menu Mobile */}
+                {/* === MENU MOBILE APRIMORADO === */}
                 <div
-                    className={`lg:hidden pb-4 space-y-3 transition-all duration-300 ease-in-out overflow-hidden bg-black text-white ${
-                        isMenuOpen ? "max-h-96 opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
+                    // Ajuste de Altura para tela cheia e barra de rolagem
+                    className={`fixed top-16 left-0 w-full h-[calc(100vh-64px)] overflow-y-auto lg:hidden 
+                        transition-transform duration-300 ease-in-out bg-black shadow-2xl ${
+                        isMenuOpen ? "translate-x-0" : "translate-x-full" // Desliza da direita para esquerda
                     }`}
                 >
-                    <button onClick={() => scrollToSection("hero")} className="block py-2 hover:text-[#E45B25]">
-                        Início
-                    </button>
-                    
-                    <h3 className="pt-2 font-semibold text-gray-400">Cursos</h3>
-                    {courseOptions.map((option, index) => (
-                        <button
-                            key={index}
-                            onClick={option.action}
-                            className="block w-full text-left pl-4 py-2 text-sm text-white hover:text-[#E45B25] transition-colors"
+                    <div className="px-6 py-6 space-y-4">
+                        
+                        {/* 1. INÍCIO */}
+                        <button 
+                            onClick={() => scrollToSection("hero")} 
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
                         >
-                            - {option.label}
+                            <Home className="w-6 h-6" /> Início
                         </button>
-                    ))}
 
-                    <button
-                        onClick={goToMoments}
-                        className={`block py-2 hover:text-[#E45B25] flex items-center gap-2`} 
-                    >
-                        <Camera className="w-4 h-4" /> Momentos
-                    </button>
-                    
-                    <button onClick={() => scrollToSection("about")} className="block py-2 hover:text-[#E45B25]">
-                        Sobre a IesCursos
-                    </button>
+                        {/* 2. CURSOS (Agrupado com Dropdown Style) */}
+                        <div className="border-b border-white/10 pb-4">
+                             <button
+                                onClick={() => setIsCoursesDropdownOpen(!isCoursesDropdownOpen)}
+                                className={`flex justify-between items-center w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors`}
+                            >
+                                Cursos <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isCoursesDropdownOpen ? 'rotate-180' : 'rotate-0'}`} />
+                            </button>
+                            {/* Sub-itens de Cursos */}
+                            <div 
+                                className={`transition-all duration-300 ease-in-out overflow-hidden ${isCoursesDropdownOpen ? "max-h-60 pt-2" : "max-h-0"}`}
+                            >
+                                {courseOptions.map((option, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={option.action}
+                                        className="block w-full text-left pl-6 py-2 text-base text-gray-300 hover:text-[#E45B25] transition-colors"
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                    <button onClick={() => scrollToSection("contact")} className="block py-2 hover:text-[#E45B25]">
-                        Fale Conosco
-                    </button>
+                        {/* 3. MOMENTOS */}
+                        <button
+                            onClick={goToMoments}
+                            className={`flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10`} 
+                        >
+                            <Camera className="w-6 h-6" /> Momentos
+                        </button>
+                        
+                        {/* 4. SOBRE */}
+                        <button 
+                            onClick={() => scrollToSection("about")} 
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
+                        >
+                            <Info className="w-6 h-6" /> Sobre a IesCursos
+                        </button>
 
-                    {/* BOTÃO MATRICULE-SE: AGORA REDIRECIONA PARA O WHATSAPP */}
-                    <button
-                        onClick={handleMatriculeClick}
-                        className={`bg-[${ACCENT_COLOR}] w-full py-2.5 rounded-full font-bold text-white mt-4 hover:bg-[#d66a1f]`} 
-                    >
-                        Matricule-se
-                    </button>
+                        {/* 5. CONTATO */}
+                        <button 
+                            onClick={() => scrollToSection("contact")} 
+                            className="flex items-center gap-3 w-full py-3 text-lg font-semibold text-white hover:text-[#E45B25] transition-colors border-b border-white/10"
+                        >
+                            <Phone className="w-6 h-6" /> Fale Conosco
+                        </button>
+
+                        {/* BOTÃO MATRICULE-SE (Destaque final) */}
+                        <div className="pt-6">
+                            <button
+                                onClick={handleMatriculeClick}
+                                className={`bg-[${ACCENT_COLOR}] w-full py-3 rounded-xl font-extrabold text-white text-lg transition-colors hover:bg-[#d66a1f] shadow-lg`} 
+                            >
+                                Falar com um Consultor
+                            </button>
+                        </div>
+                    </div>
+                    {/* Linha de preenchimento para garantir que o scroll funcione bem */}
+                    <div className="h-12 w-full"></div> 
                 </div>
             </div>
         </header>

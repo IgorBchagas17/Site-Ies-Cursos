@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom"; 
-import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar } from "lucide-react"; 
+import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter } from "lucide-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Moment } from "../../types";
@@ -86,8 +86,19 @@ interface StorageState {
     isFull: boolean;
 }
 
-const categories = [
+// Opções para o Select de Upload
+const uploadCategories = [
     { label: 'Selecione a Categoria', value: '' }, 
+    { label: 'Eventos', value: 'eventos' },
+    { label: 'Alunos', value: 'alunos' },
+    { label: 'Estrutura', value: 'estrutura' },
+    { label: 'Aulas', value: 'aulas' },
+    { label: 'Comunidade', value: 'comunidade' },
+];
+
+// Opções para o Filtro (Inclui 'Todos')
+const filterTabs = [
+    { label: 'Todos', value: 'todos' },
     { label: 'Eventos', value: 'eventos' },
     { label: 'Alunos', value: 'alunos' },
     { label: 'Estrutura', value: 'estrutura' },
@@ -97,6 +108,7 @@ const categories = [
 
 function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
     const formatSize = (sizeMB: number) => {
+        if (sizeMB < 0.01 && sizeMB > 0) return "< 0.01 MB";
         if (sizeMB > 1000) return `${(sizeMB / 1024).toFixed(2)} GB`;
         return `${sizeMB.toFixed(2)} MB`;
     };
@@ -161,6 +173,10 @@ export default function AdminMoments() {
     // Estado de uso do Storage
     const [storageUsage, setStorageUsage] = useState<StorageState>({ total: 0, used: 0, percentage: 0, isFull: false });
 
+    // === ESTADOS PARA FILTROS E BUSCA ===
+    const [searchTerm, setSearchTerm] = useState("");
+    const [activeFilter, setActiveFilter] = useState("todos");
+
     // === ESTADOS PARA O DELETE MODAL ===
     const [momentToDelete, setMomentToDelete] = useState<MomentEvent | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -212,6 +228,22 @@ export default function AdminMoments() {
 
         return isFormValid && mediaSelected;
     }, [isFormValid, uploadType, newFile, newVideoUrl, storageUsage.isFull]);
+
+    // === LÓGICA DE FILTRAGEM ===
+    const filteredMoments = useMemo(() => {
+        return moments.filter(moment => {
+            // 1. Filtro por Categoria
+            const matchesCategory = activeFilter === 'todos' || moment.category === activeFilter;
+            
+            // 2. Filtro por Busca (Nome ou Descrição)
+            const searchLower = searchTerm.toLowerCase();
+            const matchesSearch = 
+                moment.title.toLowerCase().includes(searchLower) || 
+                moment.description.toLowerCase().includes(searchLower);
+
+            return matchesCategory && matchesSearch;
+        });
+    }, [moments, activeFilter, searchTerm]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -272,14 +304,18 @@ export default function AdminMoments() {
         setUploading(true);
         let finalSrc = "";
         let finalType: Moment['type'] = uploadType === 'url' ? 'video' : 'image';
+        let fileSize = 0; 
         
         if (uploadType === 'url') {
             finalType = 'video'; 
             finalSrc = newVideoUrl.trim();
+            fileSize = 0; 
         }
 
         try {
             if (uploadType === 'file' && newFile) {
+                fileSize = newFile.size;
+
                 const fileExt = newFile.name.split('.').pop();
                 const cleanName = newFile.name.replace(/[^a-zA-Z0-9]/g, '_');
                 const fileName = `${Date.now()}_${cleanName}.${fileExt}`;
@@ -304,7 +340,8 @@ export default function AdminMoments() {
                 category: newCategory as Moment['category'], 
                 type: finalType,
                 src: finalSrc,
-                event_date: newDate, 
+                event_date: newDate,
+                size_bytes: fileSize,
             }); 
 
             setMoments(prev => [newMoment, ...prev]);
@@ -343,26 +380,27 @@ export default function AdminMoments() {
 
         try {
             // 1. TENTA REMOVER DO STORAGE (Se for imagem)
-            // Lógica robusta: Pega tudo que estiver depois do nome do bucket na URL
             if (momentToDelete.type === 'image' && momentToDelete.src) {
                  try {
-                    const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
-                    if (parts.length > 1) {
-                        const storagePath = decodeURIComponent(parts[1]);
-                        console.log("Tentando deletar do storage:", storagePath);
-                        
-                        const { error: storageError } = await supabase.storage
-                            .from(BUCKET_NAME) 
-                            .remove([storagePath]);
+                    // VERIFICA SE A URL É DO SUPABASE (contém o nome do bucket)
+                    if (momentToDelete.src.includes(`/${BUCKET_NAME}/`)) {
+                        const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
+                        if (parts.length > 1) {
+                            const storagePath = decodeURIComponent(parts[1]);
+                            
+                            const { error: storageError } = await supabase.storage
+                                .from(BUCKET_NAME) 
+                                .remove([storagePath]);
 
-                        if (storageError) {
-                            console.warn("Aviso: Falha ao remover do Storage (verifique as policies):", storageError.message);
-                        } else {
-                            console.log("Arquivo deletado do Storage com sucesso.");
+                            if (storageError) {
+                                console.warn("Aviso: Falha ao remover do Storage (continuando com o DB):", storageError.message);
+                            } else {
+                                console.log("Arquivo deletado do Storage com sucesso.");
+                            }
                         }
                     }
                 } catch (e) {
-                    console.error("Erro ao extrair caminho do storage:", e);
+                    console.error("Erro ao processar URL para exclusão no Storage:", e);
                 }
             }
             
@@ -495,7 +533,7 @@ export default function AdminMoments() {
                                 onChange={(e) => setNewCategory(e.target.value as Moment['category'])}
                                 className={`px-3 py-2 rounded-lg border text-sm text-[${TEXT_COLOR}] border-zinc-700 bg-zinc-900/60 focus:ring-2 focus:ring-[${ACCENT_COLOR}] appearance-none cursor-pointer ${errorCategory ? 'border-red-500' : ''}`}
                             >
-                                {categories.map(cat => (
+                                {uploadCategories.map(cat => (
                                     <option key={cat.value} value={cat.value} disabled={cat.value === ''}>
                                         {cat.label}
                                     </option>
@@ -550,26 +588,69 @@ export default function AdminMoments() {
                 isFull={storageUsage.isFull}
             />
 
-            {/* === LISTA DE MOMENTOS === */}
+            {/* === LISTA DE MOMENTOS (COM FILTROS) === */}
             <div className={`p-4 rounded-xl bg-[${DARK_SHADE}] border border-zinc-700`}>
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-base font-bold text-zinc-300">Galeria Atual</h2>
-                    <button
-                        onClick={() => loadMoments(true)}
-                        className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
-                        disabled={loading}
-                    >
-                        <RefreshCcw size={14} /> Recarregar
-                    </button>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h2 className="text-base font-bold text-zinc-300 flex items-center gap-2">
+                        Galeria Atual
+                        <button
+                            onClick={() => loadMoments(true)}
+                            className="ml-2 flex items-center gap-1 text-xs font-normal text-zinc-500 hover:text-white transition-colors"
+                            disabled={loading}
+                        >
+                            <RefreshCcw size={12} /> Recarregar
+                        </button>
+                    </h2>
+                    
+                    {/* BARRA DE FILTRO E BUSCA */}
+                    <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                        {/* Busca */}
+                        <div className="relative group">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-orange-500 transition-colors" size={16} />
+                            <input 
+                                type="text" 
+                                placeholder="Buscar por nome..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full sm:w-64 bg-zinc-900/50 border border-zinc-700 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-200 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-zinc-600"
+                            />
+                        </div>
+
+                        {/* Filtro Dropdown Mobile / Pills Desktop (Simplificado para scroll horizontal no mobile) */}
+                        <div className="flex overflow-x-auto pb-2 sm:pb-0 gap-2 no-scrollbar mask-gradient">
+                            {filterTabs.map((tab) => (
+                                <button
+                                    key={tab.value}
+                                    onClick={() => setActiveFilter(tab.value)}
+                                    className={`
+                                        whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                                        ${activeFilter === tab.value 
+                                            ? 'bg-orange-600 border-orange-500 text-white shadow-lg shadow-orange-900/20' 
+                                            : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'}
+                                    `}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
-                {loading && <p className="text-center text-zinc-500 py-4">Carregando fotos...</p>}
+                {loading && <p className="text-center text-zinc-500 py-4 flex items-center justify-center gap-2"><Loader2 className="animate-spin" size={16}/> Carregando fotos...</p>}
 
-                {!loading && moments.length > 0 && (
+                {!loading && filteredMoments.length === 0 && (
+                    <div className="text-center py-12 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30">
+                        <Filter className="mx-auto text-zinc-600 mb-2" size={32} />
+                        <p className="text-zinc-400 font-medium">Nenhum momento encontrado.</p>
+                        <p className="text-zinc-600 text-xs mt-1">Tente mudar os filtros ou adicione uma nova foto.</p>
+                    </div>
+                )}
+
+                {!loading && filteredMoments.length > 0 && (
                     <>
-                        {/* MODO MOBILE */}
+                        {/* MODO MOBILE (LAYOUT CORRIGIDO E EMPILHADO) */}
                         <div className="md:hidden space-y-4">
-                            {moments.map((moment) => (
+                            {filteredMoments.map((moment) => (
                                 <div key={moment.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col">
                                     <div className="relative aspect-video w-full bg-zinc-950">
                                          {moment.type === 'image' ? (
@@ -615,9 +696,10 @@ export default function AdminMoments() {
                         {/* MODO DESKTOP */}
                         <div className="hidden md:grid grid-cols-3 lg:grid-cols-5 gap-4">
                             <AnimatePresence>
-                                {moments.map((moment) => (
+                                {filteredMoments.map((moment) => (
                                     <motion.div
                                         key={moment.id}
+                                        layout // Adiciona animação suave ao filtrar
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
@@ -666,16 +748,12 @@ export default function AdminMoments() {
                         </div>
                     </>
                 )}
-                
-                {!loading && moments.length === 0 && (
-                    <p className="text-center text-zinc-500 py-8">Nenhuma foto na galeria.</p>
-                )}
             </div>
 
             <DeleteModal 
                 open={!!momentToDelete}
                 title="Excluir Momento"
-                description="Tem certeza que deseja remover este momento? Ele deixará de aparecer no site imediatamente."
+                description="Tem certeza que deseja remover este momento? O arquivo será permanentemente apagado do servidor."
                 onCancel={() => setMomentToDelete(null)}
                 onConfirm={handleConfirmDelete}
                 isLoading={isDeleting}

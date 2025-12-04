@@ -1,7 +1,5 @@
-// src/components/AllCurse.tsx - Versão Moderna e com Cores Atualizadas
-
 import { useState, useMemo, useEffect } from "react";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { Course } from "../types";
 import { CourseCard } from "./CourseCard";
 
@@ -18,9 +16,9 @@ const ROWS_PER_PAGE = 5;
 const ITEMS_PER_PAGE = ITEMS_PER_ROW * ROWS_PER_PAGE;
 
 // Cor de Destaque
-const ACCENT_COLOR = "#E45B25"; // Laranja forte
+const ACCENT_COLOR = "#E45B25"; 
 
-// Helper para checar se o curso está em promoção (Usado para ordenação)
+// Helper para checar se o curso está em promoção
 const isCoursePromoted = (course: Course) => {
     const price = course.price ?? 0;
     const promoPrice = course.promoPrice;
@@ -38,7 +36,7 @@ export default function AllCurse({
     const [currentPage, setCurrentPage] = useState(1);
 
     const filteredCourses = useMemo(() => {
-        let list = [...allCourses]; // Usar cópia para permitir ordenação
+        let list = [...allCourses]; 
 
         if (activeFilter !== "all") {
             list = list.filter((c) => c.type === activeFilter);
@@ -53,14 +51,14 @@ export default function AllCurse({
             );
         }
         
-        // 1. ORDENAÇÃO: Prioriza cursos em promoção (Mantido, mas confirmado)
+        // ORDENAÇÃO: Prioriza cursos em promoção
         list.sort((a, b) => {
             const aIsPromoted = isCoursePromoted(a);
             const bIsPromoted = isCoursePromoted(b);
 
-            if (aIsPromoted && !bIsPromoted) return -1; // Promovido vem primeiro
-            if (!aIsPromoted && bIsPromoted) return 1;  // Promovido vem primeiro
-            return 0; // Mantém a ordem original ou aplica o próximo critério (se houver)
+            if (aIsPromoted && !bIsPromoted) return -1; 
+            if (!aIsPromoted && bIsPromoted) return 1;  
+            return 0; 
         });
 
 
@@ -91,23 +89,23 @@ export default function AllCurse({
     ];
 
     return (
-        <section className="min-h-screen pt-32 pb-20 bg-gray-50"> {/* Fundo leve, moderno */}
+        <section className="min-h-screen pt-32 pb-20 bg-gray-50">
             <div className="container mx-auto px-4">
                 
                 {/* === TÍTULO E BOTÃO VOLTAR === */}
                 <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <h1 className="text-5xl font-extrabold text-gray-900 mb-4 md:mb-0">
+                    <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 md:mb-0">
                         Catálogo Completo
                     </h1>
                     <button
                         onClick={onBack}
                         className={`flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-[${ACCENT_COLOR}] transition-colors`}
                     >
-                        <ArrowLeft className="w-5 h-5" /> Voltar à Página Inicial
+                        <ArrowLeft className="w-5 h-5" /> <span className="hidden md:inline">Voltar à Página Inicial</span> <span className="md:hidden">Voltar</span>
                     </button>
                 </div>
 
-                {/* === FILTROS E PESQUISA - Estilo de Card Moderno === */}
+                {/* === FILTROS E PESQUISA === */}
                 <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-12 p-6 bg-white rounded-xl shadow-lg border border-gray-100">
                     
                     {/* Pesquisa */}
@@ -128,10 +126,10 @@ export default function AllCurse({
                             <button
                                 key={filter.value}
                                 onClick={() => setActiveFilter(filter.value)}
-                                className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 shadow-md ${
+                                className={`px-6 py-2.5 text-sm font-semibold rounded-full transition-all duration-200 shadow-md flex-grow md:flex-grow-0 ${
                                     activeFilter === filter.value
-                                        ? `bg-[${ACCENT_COLOR}] text-white shadow-md shadow-[${ACCENT_COLOR}]/30` // Active: Laranja
-                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200" // Inactive: Limpo
+                                        ? `bg-[${ACCENT_COLOR}] text-white shadow-md shadow-[${ACCENT_COLOR}]/30` 
+                                        : "bg-gray-100 text-gray-700 hover:bg-gray-200" 
                                 }`}
                             >
                                 {filter.label}
@@ -144,7 +142,6 @@ export default function AllCurse({
                 {currentCourses.length > 0 ? (
                     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {currentCourses.map((course) => (
-                            // Hover e transição adicionados para o toque moderno
                             <div
                                 key={course.id}
                                 className="transition-all duration-300 hover:scale-[1.02] hover:shadow-xl rounded-xl"
@@ -162,43 +159,53 @@ export default function AllCurse({
                     </div>
                 )}
 
-                {/* === Paginação - Estilo Moderno === */}
+                {/* === PAGINAÇÃO RESPONSIVA === */}
                 {totalPages > 1 && (
-                    <div className="flex justify-center items-center space-x-2 mt-12">
+                    <div className="flex justify-center items-center gap-3 mt-12 select-none">
                         {/* Botão Anterior */}
                         <button
                             onClick={() => handlePageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                            className="px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors flex items-center gap-1"
                         >
-                            Anterior
+                            <ChevronLeft size={20} />
+                            <span className="hidden md:inline">Anterior</span>
                         </button>
 
-                        {/* Números da Página */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                            <button
-                                key={p}
-                                onClick={() => handlePageChange(p)}
-                                className={`w-10 h-10 border rounded-xl font-semibold transition duration-200 ${
-                                    currentPage === p
-                                        ? `bg-[${ACCENT_COLOR}] text-white border-[${ACCENT_COLOR}] shadow-md shadow-[${ACCENT_COLOR}]/30` // Active: Laranja
-                                        : "text-gray-700 hover:bg-gray-100 border-gray-300" // Inactive: Limpo
-                                }`}
-                            >
-                                {p}
-                            </button>
-                        ))}
+                        {/* MOBILE: Mostra texto "Pág X de Y" */}
+                        <span className="md:hidden text-sm font-semibold text-gray-600">
+                            {currentPage} / {totalPages}
+                        </span>
+
+                        {/* DESKTOP: Mostra números das páginas */}
+                        <div className="hidden md:flex gap-2">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                                <button
+                                    key={p}
+                                    onClick={() => handlePageChange(p)}
+                                    className={`w-10 h-10 border rounded-xl font-semibold transition duration-200 ${
+                                        currentPage === p
+                                            ? `bg-[${ACCENT_COLOR}] text-white border-[${ACCENT_COLOR}] shadow-md shadow-[${ACCENT_COLOR}]/30` 
+                                            : "text-gray-700 hover:bg-gray-100 border-gray-300" 
+                                    }`}
+                                >
+                                    {p}
+                                </button>
+                            ))}
+                        </div>
 
                         {/* Botão Próxima */}
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="px-5 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                            className="px-4 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 disabled:opacity-50 transition-colors flex items-center gap-1"
                         >
-                            Próxima
+                            <span className="hidden md:inline">Próxima</span>
+                            <ChevronRight size={20} />
                         </button>
                     </div>
                 )}
+
             </div>
         </section>
     );

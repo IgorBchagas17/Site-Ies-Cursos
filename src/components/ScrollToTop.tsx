@@ -32,7 +32,7 @@ export function ScrollToTop() {
         <motion.button
           key="scrollToTop"
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#F27A24] shadow-xl text-white"
+          className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-[#A8430F] shadow-xl text-white"
           initial={{
             opacity: 0,
             y: 40,
