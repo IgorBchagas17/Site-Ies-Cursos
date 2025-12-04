@@ -138,7 +138,7 @@ export function Contact() {
                         <div className="space-y-4 pt-4">
                             <div className="flex items-center gap-4">
                                 <MapPin className="w-7 h-7 text-[#ff5722] flex-shrink-0" />
-                                <span className="text-gray-300">Rua: Canabrava, : 100 - Centro, Unaí - MG, 38610-031</span>
+                                <span className="text-gray-300">Rua: Canabrava, 100 - Centro, Unaí - MG, 38610-031</span>
                             </div>
                             <div className="flex items-center gap-4">
                                 <Phone className="w-7 h-7 text-[#ff5722] flex-shrink-0" />

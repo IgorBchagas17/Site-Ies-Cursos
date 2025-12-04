@@ -54,16 +54,16 @@ export function Footer() {
               <div className="flex items-start gap-2">
                 <MapPin className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
                 <p className="text-gray-400 text-sm">
-                  Rua Exemplo, 123 - Centro - Cidade/Estado
+                  Rua: Canabrava, 100 - Centro, Unaí - MG, 38610-031
                 </p>
               </div>
               <div className="flex items-start gap-2">
                 <Phone className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">(38) 99999-9999</p>
+                <p className="text-gray-400 text-sm">(38) 98863-0487</p>
               </div>
               <div className="flex items-start gap-2">
                 <Mail className={`w-5 h-5 text-[${ACCENT_COLOR}] flex-shrink-0 mt-0.5`} />
-                <p className="text-gray-400 text-sm">contato@iescursos.com.br</p>
+                <p className="text-gray-400 text-sm">iescursos@gmail.com.br</p>
               </div>
             </div>
           </div>
