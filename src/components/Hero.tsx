@@ -235,7 +235,7 @@ export function Hero() {
                                                         <p className="text-sm text-zinc-300 uppercase tracking-wider mt-1">Alunos Formados</p>
                                                     </div>
                                                     <div className="flex flex-col items-center p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
-                                                        <span className={`text-4xl font-extrabold text-[${ORIGINAL_ACCENT_COLOR}]`}>20+</span>
+                                                        <span className={`text-4xl font-extrabold text-[${ORIGINAL_ACCENT_COLOR}]`}>+20</span>
                                                         <p className="text-sm text-zinc-300 uppercase tracking-wider mt-1">Áreas de Atuação</p>
                                                     </div>
                                                 </div>
