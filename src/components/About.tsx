@@ -37,7 +37,7 @@ export function About() {
 
   return (
     // Fundo moderno: Cinza muito claro
-    <section id="about" className="py-20 bg-gray-50"> 
+    <section id="about" className="py-20 bg-[#ffeae3]"> 
       <div className="container mx-auto px-4">
 
         {/* Título / topo - Sem motion */}

@@ -162,7 +162,7 @@ export function Header() {
                             onClick={() => scrollToSection("about")}
                             className={`py-2 hover:text-[${ACCENT_COLOR}] transition-colors`}
                         >
-                            Sobre a IesCursos
+                            Sobre a IESCursos
                         </button>
 
                         <button

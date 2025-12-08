@@ -51,7 +51,7 @@ export function CoursesSection({
       {/* ================================
           CURSOS PRINCIPAIS (DESTAQUE/PROMOÇÕES)
       ================================= */}
-      <section id="courses" className="py-12 sm:py-20 bg-gray-50"> 
+      <section id="courses" className="py-12 sm:py-20 bg-[#ffeae3]"> 
         <div className="container mx-auto px-4">
           {/* TÍTULO */}
           <motion.div

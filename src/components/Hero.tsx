@@ -1,5 +1,3 @@
-// src/components/Hero.tsx
-
 import { useState, useEffect } from 'react';
 import { ArrowRight, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
@@ -92,7 +90,7 @@ export function Hero() {
     
     // Gradientes e cores para o novo visual
     const LIGHT_GRADIENT = "from-[#ff5722] to-[#FF9E40]";
-    const DARK_BACKGROUND = "bg-zinc-75"; // Fundo mais escuro para maior contraste
+    const DARK_BACKGROUND = "bg-zinc-75"; 
 
     // URL da imagem padrão (usada tanto no desktop quanto no mobile com overlay)
     const STANDARD_IMAGE_URL = "https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&w=800";
@@ -106,7 +104,6 @@ export function Hero() {
 
 
     return (
-        // MANTIDO
         <section id="hero" className="relative w-full overflow-hidden bg-black text-white">
             {/* MANTIDO: lg:h-screen e h-[680px] */}
             <div className="relative h-[680px] sm:h-[650px] lg:h-screen w-full flex items-start lg:items-center bg-zinc-900 overflow-hidden">
@@ -148,18 +145,15 @@ export function Hero() {
 
 
                             <div className="container mx-auto px-4 lg:px-12 pointer-events-none md:pointer-events-auto relative z-20">
-                                {/* CORREÇÃO FINAL 1: Aumentado o padding inferior do desktop (lg:pb-16) para dar mais folga ao botão. */}
-                                {/* MANTIDO: lg:pt-32 para compensar o header. */}
                                 <div className="flex flex-col lg:grid lg:grid-cols-2 gap-8 lg:gap-16 items-center w-full py-8 lg:pt-32 lg:pb-16">
                                     
-                                    {/* Texto */}
+                                    {/* Texto e Botão (Centralizados no Mobile, Esquerda no Desktop) */}
                                     <div className="space-y-3 lg:space-y-5 z-10 relative text-center lg:text-left">
                                         
                                         <motion.div 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.2 }}
-                                            // NOVO AJUSTE: Oculta a tag no DESKTOP (lg:hidden) para economizar espaço e evitar corte
                                             className="inline-block lg:hidden"
                                         >
                                             <span className={`bg-[${ORIGINAL_ACCENT_COLOR}] text-white px-4 py-2 rounded-full text-xs lg:text-sm font-bold uppercase tracking-widest shadow-lg`}>
@@ -171,12 +165,11 @@ export function Hero() {
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.3 }}
-                                            // MANTIDO: lg:text-6xl
                                             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight max-w-xl mx-auto lg:mx-0"
                                         >
                                             O Futuro da sua Carreira Começa na{' '}
                                             <span className={`text-transparent bg-clip-text bg-gradient-to-r ${LIGHT_GRADIENT}`}>
-                                                IesCursos
+                                                IESCursos
                                             </span>
                                         </motion.h1>
 
@@ -189,15 +182,22 @@ export function Hero() {
                                             Cursos Profissionalizantes Presenciais e EAD com a qualidade que o mercado exige e valores que cabem no seu bolso.
                                         </motion.p>
 
-                                        {/* Lista de benefícios: MANTIDA com 3 itens e ajustes de tamanho */}
+                                        {/* Lista de benefícios: NOVO AJUSTE DE ALINHAMENTO */}
                                         <motion.ul 
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.5 }}
+                                            // CLASSE CRÍTICA: mobile flex-col (centra o bloco) e items-center (centra o conteúdo)
+                                            // Mas no DESKTOP, alinha tudo à esquerda (items-start)
                                             className="space-y-2 lg:space-y-2 flex flex-col items-center lg:items-start"
                                         >
                                             {BENEFITS.map((item, i) => (
-                                                <li key={i} className="flex items-start gap-3 text-sm lg:text-base text-zinc-200 text-left max-w-sm">
+                                                <li 
+                                                    key={i} 
+                                                    // NOVO AJUSTE: Garante que o texto do item esteja à esquerda (text-left) 
+                                                    // e ocupe o máximo de espaço no bloco centrado (max-w-sm)
+                                                    className="flex items-start gap-3 text-sm lg:text-base text-zinc-200 text-left max-w-sm w-full sm:max-w-md"
+                                                >
                                                     <div className={`bg-[${ORIGINAL_ACCENT_COLOR}] p-1.5 rounded-full flex-shrink-0 mt-1 shadow-md`}>
                                                         <Check className="w-4 h-4 text-white" />
                                                     </div>
@@ -210,7 +210,7 @@ export function Hero() {
                                             initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.6 }}
-                                            // MANTIDO: pt-4, lg:pt-3
+                                            // MANTIDO: pt-4, lg:pt-3 e flex justify-center no mobile
                                             className="pt-4 lg:pt-3 flex justify-center lg:justify-start"
                                         >
                                             <button
@@ -228,7 +228,7 @@ export function Hero() {
                                         <div className="relative p-6 bg-black/50 border border-white/10 rounded-3xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-500 backdrop-blur-sm">
                                             
                                             <div className="space-y-5 text-center">
-                                                <h3 className={`text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${LIGHT_GRADIENT}`}>Por que escolher a IesCursos?</h3>
+                                                <h3 className={`text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r ${LIGHT_GRADIENT}`}>Por que escolher a IESCursos?</h3>
                                                 <div className="grid grid-cols-2 gap-6">
                                                     <div className="flex flex-col items-center p-4 bg-zinc-800/50 rounded-xl border border-zinc-700/50">
                                                         <span className={`text-4xl font-extrabold text-[${ORIGINAL_ACCENT_COLOR}]`}>+5 Mil</span>
