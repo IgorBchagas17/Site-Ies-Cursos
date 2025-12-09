@@ -8,7 +8,7 @@ import logo from "./img/logo-ies-not-background-2.png"; // Ajuste o caminho conf
 const ACCENT_COLOR = "#ff5722"; // Laranja forte
 
 // Rota de Login Admin (Use a rota obscura se já a tiver definido, ex: /s-801-auth-xyz)
-const ADMIN_LOGIN_PATH = "/ies-admin/login"; 
+const ADMIN_LOGIN_PATH = "/ies-admin/"; 
 // Se você for usar a rota obscura BASE do nosso exemplo anterior, substitua por:
 // const ADMIN_LOGIN_PATH = "/s-801-auth-xyz"; 
 
