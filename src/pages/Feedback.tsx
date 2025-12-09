@@ -137,7 +137,7 @@ export default function Feedback() {
         <>
             <Header />
             <motion.main 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 0 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
                 className="min-h-screen pt-32 pb-20 bg-gray-50"
