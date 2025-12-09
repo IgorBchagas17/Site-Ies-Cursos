@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { feedbackService, Feedback } from '../services/feedbackService';
 
 // ==========================================
-// MODAL DE LEITURA (CORRIGIDO)
+// MODAL DE LEITURA (PERFORMANCE MÁXIMA)
 // ==========================================
 interface ReadMoreModalProps {
     feedback: Feedback;
@@ -24,20 +24,23 @@ function ReadMoreModal({ feedback, onClose }: ReadMoreModalProps) {
             {/* Backdrop Escuro */}
             <motion.div 
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }} // Rápido
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                 onClick={onClose}
             />
             
             {/* Conteúdo do Modal */}
             <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                // OTIMIZAÇÃO: Apenas Scale e Opacity
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.15 }}
                 className="relative bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl z-10 flex flex-col max-h-[90vh]"
             >
                 <button 
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-500 z-20"
+                    className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors text-gray-500 z-20 outline-none focus:outline-none"
                 >
                     <X size={20} />
                 </button>
@@ -59,7 +62,6 @@ function ReadMoreModal({ feedback, onClose }: ReadMoreModalProps) {
 
                         <div className="w-full h-px bg-gray-100 mb-6"></div>
 
-                        {/* CORREÇÃO DO TEXTO: break-words e whitespace-pre-wrap */}
                         <p className="text-gray-700 text-base leading-relaxed text-justify whitespace-pre-wrap break-words break-all">
                             "{feedback.message}"
                         </p>
@@ -98,10 +100,11 @@ export function Testimonials() {
       <div className="container mx-auto px-4">
         {/* Cabeçalho */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          // OTIMIZAÇÃO: Removido 'y' (vertical) para mais leveza
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3 }}
           className="text-center mb-12"
         >
           <span className="text-[#ff5722] font-semibold text-lg">Depoimentos</span>
@@ -133,11 +136,12 @@ export function Testimonials() {
                 feedbacks.map((testimonial, index) => (
                 <motion.div
                     key={testimonial.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    // OTIMIZAÇÃO: Removido 'y' e reduzido o delay
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                    whileHover={{ y: -5 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    whileHover={{ scale: 1.02 }} // Reduzi o whileHover de y:-5 para scale: 1.02
                     className="bg-white rounded-xl p-8 shadow-lg cursor-default border border-gray-100 flex flex-col h-full"
                 >
                     <div className="flex-1">
@@ -149,15 +153,13 @@ export function Testimonials() {
                             ))}
                         </div>
 
-                        {/* LINE CLAMP + BREAK ALL para evitar quebra de layout */}
                         <p className="text-gray-700 mb-2 leading-relaxed italic line-clamp-4 break-words break-all">
                             "{testimonial.message}"
                         </p>
                         
-                        {/* Botão Ler Mais */}
                         <button 
                             onClick={() => setSelectedFeedback(testimonial)}
-                            className="text-xs font-bold text-[#ff5722] hover:underline mb-6 flex items-center gap-1 uppercase tracking-wide"
+                            className="text-xs font-bold text-[#ff5722] hover:underline mb-6 flex items-center gap-1 uppercase tracking-wide outline-none focus:outline-none"
                         >
                             <Maximize2 size={12} /> Ler completo
                         </button>

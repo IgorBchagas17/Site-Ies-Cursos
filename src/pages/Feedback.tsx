@@ -14,7 +14,7 @@ import { Footer } from '../components/Footer';
 
 // Configurações
 const ACCENT_COLOR = "#ff5722";
-const MAX_CHARS = 400; // 🆕 Limite de caracteres
+const MAX_CHARS = 400; 
 
 // Sanitização local
 function sanitizeInput(dirtyString: string): string {
@@ -40,7 +40,6 @@ export default function Feedback() {
     const [rating, setRating] = useState(0);
     const [hoverRating, setHoverRating] = useState(0);
 
-    // Scroll Top ao abrir
     useEffect(() => {
         window.scrollTo(0, 0);
         
@@ -61,9 +60,8 @@ export default function Feedback() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
-        // 🆕 Lógica de Limite de Caracteres
         if (name === 'message' && value.length > MAX_CHARS) {
-            return; // Impede a digitação se passar do limite
+            return;
         }
 
         setFormData(prev => ({
@@ -72,7 +70,6 @@ export default function Feedback() {
         }));
     };
 
-    // FUNÇÃO DE SCROLL ROBUSTA
     const scrollToTestimonials = () => {
         setTimeout(() => {
             const section = document.getElementById('depoimentos');
@@ -137,9 +134,10 @@ export default function Feedback() {
         <>
             <Header />
             <motion.main 
-                initial={{ opacity: 0, y: 0 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
+                // OTIMIZAÇÃO: A animação de página agora é puramente opacidade (mais leve para o scroll)
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15 }} // Mais rápida
                 className="min-h-screen pt-32 pb-20 bg-gray-50"
             >
                 <div className="container mx-auto px-4">
@@ -148,7 +146,7 @@ export default function Feedback() {
                     <div className="mb-8">
                         <button
                             onClick={handleBack}
-                            className={`flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-[${ACCENT_COLOR}] transition-colors`}
+                            className={`flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-[${ACCENT_COLOR}] transition-colors outline-none focus:outline-none`}
                         >
                             <ArrowLeft className="w-5 h-5" /> 
                             <span>Voltar para Depoimentos</span>
@@ -249,7 +247,7 @@ export default function Feedback() {
                                     placeholder="Conte como o curso ajudou na sua carreira..."
                                     className={`${inputClasses} resize-none`}
                                 />
-                                {/* 🆕 Contador de Caracteres */}
+                                {/* Contador de Caracteres */}
                                 <div className="flex justify-end mt-1">
                                     <span className={`text-xs font-medium ${
                                         formData.message.length >= MAX_CHARS ? 'text-red-500' : 'text-gray-400'
@@ -262,7 +260,8 @@ export default function Feedback() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-[#ff5722] text-white py-4 rounded-lg font-bold text-lg hover:bg-[#d66a1f] transition-all transform hover:-translate-y-1 shadow-lg hover:shadow-orange-500/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                // Removido o transform: hover:-translate-y-1 para otimização
+                                className="w-full bg-[#ff5722] text-white py-4 rounded-lg font-bold text-lg hover:bg-[#d66a1f] transition-all shadow-lg hover:shadow-orange-500/30 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
                             >
                                 {loading ? (
                                     <>

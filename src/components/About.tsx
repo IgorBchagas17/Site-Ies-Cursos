@@ -89,7 +89,7 @@ export function About() {
           <div className="grid lg:grid-cols-3 gap-8 text-center">
             {/* Bloco de números simples, sem motion */}
             <div>
-              <p className="text-5xl font-bold text-[#ff5722] mb-2">15+</p>
+              <p className="text-5xl font-bold text-[#ff5722] mb-2">+9</p>
               <p className="text-xl">Anos de experiência</p>
             </div>
 

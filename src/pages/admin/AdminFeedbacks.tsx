@@ -79,7 +79,7 @@ function ViewModal({ feedback, onClose }: { feedback: Feedback | null, onClose: 
             />
             
             <motion.div
-                // OTIMIZAÇÃO: Removido 'y'. Apenas Scale e Opacity é muito mais leve.
+                // OTIMIZAÇÃO: Apenas Scale e Opacity (mais rápido)
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
@@ -168,11 +168,12 @@ function DeleteModal({ open, onCancel, onConfirm, isLoading }: ConfirmModalProps
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
         className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
         onClick={onCancel} 
       />
       <motion.div
-        // OTIMIZAÇÃO: Removido 'y'. Apenas Scale e Opacity.
+        // OTIMIZAÇÃO: Apenas Scale e Opacity
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
