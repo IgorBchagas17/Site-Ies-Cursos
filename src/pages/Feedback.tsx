@@ -139,7 +139,7 @@ export default function Feedback() {
             <motion.main 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.2 }}
                 className="min-h-screen pt-32 pb-20 bg-gray-50"
             >
                 <div className="container mx-auto px-4">
