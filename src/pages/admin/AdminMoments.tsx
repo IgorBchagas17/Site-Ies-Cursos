@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom"; 
-import { Trash, Upload, Camera, RefreshCcw, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter, FileVideo } from "lucide-react"; 
+import { Trash, Upload, Camera, RefreshCcw, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter, FileVideo, Youtube, Instagram, Video, Play, X } from "lucide-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Moment } from "../../types";
@@ -11,8 +11,29 @@ const ACCENT_COLOR = "#F27A24";
 const DARK_BACKGROUND = "#18181B"; 
 const DARK_SHADE = "#27272A"; 
 const TEXT_COLOR = "#FAFAFA"; 
-const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB - Ajuste conforme necessário
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 const BUCKET_NAME = "images"; 
+
+// =========================================================================
+// FUNÇÕES AUXILIARES DE MÍDIA
+// =========================================================================
+
+const getMediaType = (url: string) => {
+    if (!url) return 'internal';
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+    if (url.includes('instagram.com')) return 'instagram';
+    if (url.includes('tiktok.com')) return 'tiktok';
+    return 'internal'; 
+};
+
+const getYoutubeThumbnailUrl = (url: string): string | null => {
+    let videoId = null;
+    const matchWatch = url.match(/(?:\?v=|\/embed\/|\/v\/|\/e\/|youtu\.be\/|\/watch\?v=|\/watch\?feature=player_embedded&v=|%2Fvideos%2F|embed\/|v=)([^#&?]*).*/i);
+    if (matchWatch && matchWatch[1].length === 11) {
+        videoId = matchWatch[1];
+    }
+    return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+};
 
 // =========================================================================
 // MODAL DE CONFIRMAÇÃO
@@ -86,7 +107,6 @@ interface StorageState {
     isFull: boolean;
 }
 
-// Opções para o Select de Upload
 const uploadCategories = [
     { label: 'Selecione a Categoria', value: '' }, 
     { label: 'Eventos', value: 'eventos' },
@@ -96,7 +116,6 @@ const uploadCategories = [
     { label: 'Comunidade', value: 'comunidade' },
 ];
 
-// Opções para o Filtro (Inclui 'Todos')
 const filterTabs = [
     { label: 'Todos', value: 'todos' },
     { label: 'Eventos', value: 'eventos' },
@@ -131,7 +150,6 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
                     style={{ width: `${Math.min(percentage, 100)}%` }} 
                 />
             </div>
-            
             {isFull && (
                 <div className="mt-3 p-2 bg-red-800/50 border border-red-700 rounded-md flex items-center gap-2 text-red-300">
                     <AlertTriangle size={16} className="flex-shrink-0" />
@@ -141,6 +159,100 @@ function StorageUsageBar({ used, total, percentage, isFull }: StorageState) {
             <p className="mt-2 text-yellow-400 leading-relaxed">
                 DICA: Use links para mídias externas, pois não consomem espaço.
             </p>
+        </div>
+    );
+}
+
+// -------------------------------------------------------------
+// COMPONENTE: MEDIA THUMBNAIL (Lista Principal)
+// -------------------------------------------------------------
+const MediaThumbnail = ({ moment }: { moment: MomentEvent }) => {
+    const mediaType = moment.type === 'video' ? getMediaType(moment.src) : 'image';
+    const youtubeThumbnail = mediaType === 'youtube' ? getYoutubeThumbnailUrl(moment.src) : null;
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    const handleMouseEnter = () => {
+        if (videoRef.current) {
+            videoRef.current.play().catch(() => {});
+        }
+    };
+    const handleMouseLeave = () => {
+        if (videoRef.current) {
+            videoRef.current.pause();
+            videoRef.current.currentTime = 0;
+        }
+    };
+
+    if (moment.type === 'image') {
+        return (
+            <img 
+                src={moment.src} 
+                alt={moment.title} 
+                className="w-full h-full object-cover"
+                loading="lazy"
+            />
+        );
+    }
+
+    return (
+        <div 
+            className="w-full h-full relative flex items-center justify-center bg-zinc-950 overflow-hidden"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+             {mediaType === 'youtube' && youtubeThumbnail ? (
+                 <img src={youtubeThumbnail} alt={moment.title} className="w-full h-full object-cover opacity-90" />
+             ) : mediaType === 'internal' ? (
+                 <video
+                     ref={videoRef}
+                     src={moment.src}
+                     className="w-full h-full object-cover pointer-events-none" 
+                     muted
+                     loop
+                     playsInline
+                     disablePictureInPicture
+                     controls={false}
+                 />
+             ) : (
+                 <div className={`w-full h-full flex flex-col items-center justify-center text-white relative
+                     ${mediaType === 'instagram' ? 'bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600' : ''}
+                     ${mediaType === 'tiktok' ? 'bg-black' : ''}
+                 `}>
+                     <div className="relative z-10 flex flex-col items-center gap-1">
+                          {mediaType === 'instagram' && <Instagram size={32} />}
+                          {mediaType === 'tiktok' && (
+                             <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                 <path d="M19.589 6.686a4.793 4.793 0 0 1-3.77-4.245V2h-3.445v13.672a2.896 2.896 0 0 1-5.201 1.743l-.002-.001.002.001a2.895 2.895 0 0 1 3.183-4.51v-3.5a6.394 6.394 0 0 0-5.394 9.365 6.394 6.394 0 0 0 10.864-2.828v-6.6a8.347 8.347 0 0 0 4.77 1.621v-3.913a4.793 4.793 0 0 1-1.007-.364z"/>
+                             </svg>
+                          )}
+                          <span className="font-bold text-[10px] uppercase tracking-widest">{mediaType}</span>
+                     </div>
+                 </div>
+             )}
+
+             <div className="absolute bottom-2 right-2 flex items-center gap-2 z-10 pointer-events-none">
+                 <span className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded text-white shadow-sm backdrop-blur-md
+                      ${mediaType === 'youtube' ? 'bg-red-600/90' : ''}
+                      ${mediaType === 'instagram' ? 'bg-pink-600/90' : ''}
+                      ${mediaType === 'tiktok' ? 'bg-zinc-800/90 border border-white/20' : ''}
+                      ${mediaType === 'internal' ? 'bg-emerald-600/90' : ''}
+                 `}>
+                      <div className="flex items-center gap-1">
+                          {mediaType === 'youtube' && <><Youtube size={10}/> YT</>}
+                          {mediaType === 'instagram' && <><Instagram size={10}/> IG</>}
+                          {mediaType === 'tiktok' && <>TK</>}
+                          {mediaType === 'internal' && <><Video size={10}/> VD</>}
+                      </div>
+                 </span>
+             </div>
+             
+             {(mediaType === 'internal' || mediaType === 'youtube') && (
+                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="p-2 rounded-full bg-black/20 backdrop-blur-[1px] text-white/80">
+                         <Play size={20} fill="currentColor" />
+                    </div>
+                 </div>
+             )}
         </div>
     );
 }
@@ -162,8 +274,11 @@ export default function AdminMoments() {
     const [newFile, setNewFile] = useState<File | null>(null);
     const [newVideoUrl, setNewVideoUrl] = useState(""); 
     const [uploadType, setUploadType] = useState<'file' | 'url'>('file');
+    
+    // Estado do Preview
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    // Estados de erro para validação visual
+    // Estados de erro
     const [errorTitle, setErrorTitle] = useState(false);
     const [errorDescription, setErrorDescription] = useState(false);
     const [errorCategory, setErrorCategory] = useState(false);
@@ -213,6 +328,15 @@ export default function AdminMoments() {
     }, [loadMoments, fetchStorageUsage]);
 
 
+    // Cleanup do preview ao desmontar ou mudar arquivo
+    useEffect(() => {
+        return () => {
+            if (previewUrl && uploadType === 'file') {
+                URL.revokeObjectURL(previewUrl);
+            }
+        };
+    }, [previewUrl, uploadType]);
+
     // Helper para checar validação
     const isFormValid = useMemo(() => {
         return newTitle.trim() && newDescription.trim() && newCategory && newDate;
@@ -232,10 +356,7 @@ export default function AdminMoments() {
     // === LÓGICA DE FILTRAGEM ===
     const filteredMoments = useMemo(() => {
         return moments.filter(moment => {
-            // 1. Filtro por Categoria
             const matchesCategory = activeFilter === 'todos' || moment.category === activeFilter;
-            
-            // 2. Filtro por Busca (Nome ou Descrição)
             const searchLower = searchTerm.toLowerCase();
             const matchesSearch = 
                 moment.title.toLowerCase().includes(searchLower) || 
@@ -252,6 +373,7 @@ export default function AdminMoments() {
             toast.error("Armazenamento cheio! Não é possível fazer upload de arquivos.");
             e.target.value = '';
             setNewFile(null);
+            setPreviewUrl(null);
             return;
         }
 
@@ -259,26 +381,40 @@ export default function AdminMoments() {
             if (file.size > MAX_FILE_SIZE) {
                 toast.error(`Arquivo muito grande! O limite de upload direto é ${MAX_FILE_SIZE / 1024 / 1024}MB.`);
                 setNewFile(null);
+                setPreviewUrl(null);
                 e.target.value = '';
                 return;
             }
             
-            // Verifica se é imagem ou vídeo
             if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) {
                  toast.error("Formato inválido. Apenas imagens e vídeos são permitidos.");
                  setNewFile(null);
+                 setPreviewUrl(null);
                  e.target.value = '';
                  return;
             }
             
             setNewFile(file);
+            // GERA O PREVIEW
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+
             setNewVideoUrl('');
             setErrorFileOrUrl(false);
         } else {
             setNewFile(null);
+            setPreviewUrl(null);
         }
     };
     
+    // Função para limpar o arquivo selecionado
+    const clearSelection = () => {
+        setNewFile(null);
+        setPreviewUrl(null);
+        const fileInput = document.getElementById('file-input') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+    };
+
     useEffect(() => { setErrorTitle(!newTitle.trim() && errorTitle); }, [newTitle, errorTitle]);
     useEffect(() => { setErrorDescription(!newDescription.trim() && errorDescription); }, [newDescription, errorDescription]);
     useEffect(() => { setErrorCategory(!newCategory && errorCategory); }, [newCategory, errorCategory]);
@@ -287,6 +423,7 @@ export default function AdminMoments() {
     const handleSetUploadType = (type: 'file' | 'url') => {
         setUploadType(type);
         setNewFile(null);
+        setPreviewUrl(null);
         setNewVideoUrl('');
         setErrorFileOrUrl(false);
     };
@@ -324,7 +461,6 @@ export default function AdminMoments() {
             if (uploadType === 'file' && newFile) {
                 fileSize = newFile.size;
                 
-                // DETECTA SE É VÍDEO
                 if (newFile.type.startsWith('video/')) {
                     finalType = 'video';
                 } else {
@@ -360,17 +496,16 @@ export default function AdminMoments() {
             }); 
 
             setMoments(prev => [newMoment, ...prev]);
+            
+            // RESET TOTAL DO FORMULÁRIO
             setNewTitle("");
             setNewDescription("");
             setNewCategory("");
             setNewDate(""); 
-            setNewFile(null);
+            clearSelection();
             setNewVideoUrl("");
             setErrorFileOrUrl(false);
             setUploadType('file');
-            
-            const fileInput = document.getElementById('file-input') as HTMLInputElement;
-            if (fileInput) fileInput.value = ''; 
             
             fetchStorageUsage(); 
             toast.success("Momento adicionado com sucesso!");
@@ -388,14 +523,12 @@ export default function AdminMoments() {
         setMomentToDelete(moment);
     };
 
-    // --- FUNÇÃO DE DELETE CORRIGIDA E ROBUSTA ---
+    // --- FUNÇÃO DE DELETE CORRIGIDA ---
     const handleConfirmDelete = async () => { 
         if (!momentToDelete) return;
         setIsDeleting(true);
 
         try {
-            // 1. TENTA REMOVER DO STORAGE (Se for upload interno - imagem ou vídeo)
-            // Verificamos se a URL pertence ao bucket do projeto
             if (momentToDelete.src && momentToDelete.src.includes(`/${BUCKET_NAME}/`)) {
                  try {
                     const parts = momentToDelete.src.split(`/${BUCKET_NAME}/`);
@@ -408,8 +541,6 @@ export default function AdminMoments() {
 
                         if (storageError) {
                             console.warn("Aviso: Falha ao remover do Storage (continuando com o DB):", storageError.message);
-                        } else {
-                            console.log("Arquivo deletado do Storage com sucesso.");
                         }
                     }
                 } catch (e) {
@@ -417,9 +548,7 @@ export default function AdminMoments() {
                 }
             }
             
-            // 2. Remove do Banco
             await momentService.remove(momentToDelete.id);
-            
             setMoments(prev => prev.filter(m => m.id !== momentToDelete.id));
             fetchStorageUsage(); 
             toast.success("Momento removido.");
@@ -474,21 +603,46 @@ export default function AdminMoments() {
                 
                 <div className="pt-2 border-t border-zinc-700">
                     {uploadType === 'file' ? (
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
-                                {newFile ? 'Arquivo selecionado' : 'Selecione Foto ou Vídeo (Obrigatório)'}
-                            </label>
-                            <input
-                                type="file"
-                                id="file-input"
-                                accept="image/*,video/mp4,video/webm,video/quicktime" 
-                                onChange={handleFileChange}
-                                disabled={storageUsage.isFull}
-                                className={`w-full text-sm text-[${TEXT_COLOR}] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 ${storageUsage.isFull ? 'cursor-not-allowed' : ''}`}
-                            />
-                            {newFile && <span className="text-xs text-zinc-500 truncate">{newFile.name}</span>}
-                            {errorFileOrUrl && uploadType === 'file' && (
-                                <p className="text-xs text-red-400 mt-1 flex items-center gap-1"><AlertTriangle size={12} /> É obrigatório selecionar um arquivo.</p>
+                        <div className="flex flex-col gap-3">
+                            {!newFile ? (
+                                <>
+                                    <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                                        Selecione Foto ou Vídeo (Obrigatório)
+                                    </label>
+                                    <input
+                                        type="file"
+                                        id="file-input"
+                                        accept="image/*,video/mp4,video/webm,video/quicktime" 
+                                        onChange={handleFileChange}
+                                        disabled={storageUsage.isFull}
+                                        className={`w-full text-sm text-[${TEXT_COLOR}] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 ${storageUsage.isFull ? 'cursor-not-allowed' : ''}`}
+                                    />
+                                    {errorFileOrUrl && (
+                                        <p className="text-xs text-red-400 mt-1 flex items-center gap-1"><AlertTriangle size={12} /> É obrigatório selecionar um arquivo.</p>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-3">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-semibold text-zinc-200">Arquivo Selecionado:</span>
+                                        <button 
+                                            onClick={clearSelection}
+                                            className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 hover:bg-red-900/20 px-2 py-1 rounded transition-colors"
+                                        >
+                                            <X size={14} /> Remover Seleção
+                                        </button>
+                                    </div>
+                                    
+                                    {/* PREVIEW DO ARQUIVO */}
+                                    <div className="relative w-full h-48 bg-black/50 rounded-md overflow-hidden flex items-center justify-center border border-zinc-800">
+                                        {newFile.type.startsWith('image/') ? (
+                                            <img src={previewUrl || ''} alt="Preview" className="h-full object-contain" />
+                                        ) : (
+                                            <video src={previewUrl || ''} controls className="h-full max-w-full" />
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-zinc-500 truncate">{newFile.name} ({(newFile.size / 1024 / 1024).toFixed(2)} MB)</div>
+                                </div>
                             )}
                         </div>
                     ) : (
@@ -661,29 +815,15 @@ export default function AdminMoments() {
 
                 {!loading && filteredMoments.length > 0 && (
                     <>
-                        {/* MODO MOBILE (LAYOUT CORRIGIDO E EMPILHADO) */}
+                        {/* MODO MOBILE */}
                         <div className="md:hidden space-y-4">
                             {filteredMoments.map((moment) => (
                                 <div key={moment.id} className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col">
                                     <div className="relative aspect-video w-full bg-zinc-950">
-                                         {moment.type === 'image' ? (
-                                            <img 
-                                                src={moment.src} 
-                                                alt={moment.title} 
-                                                className="w-full h-full object-cover"
-                                                loading="lazy"
-                                            />
-                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/50 bg-black/40">
-                                                <div className="flex flex-col items-center gap-1">
-                                                    <FileVideo size={32} />
-                                                    <span className="text-[10px]">VÍDEO</span>
-                                                </div>
-                                            </div>
-                                         )}
-                                        <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded capitalize">
+                                         <MediaThumbnail moment={moment} />
+                                         <div className="absolute top-2 left-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded capitalize">
                                             {moment.category}
-                                        </div>
+                                         </div>
                                     </div>
                                     
                                     <div className="p-3 flex flex-col gap-2">
@@ -715,36 +855,23 @@ export default function AdminMoments() {
                                 {filteredMoments.map((moment) => (
                                     <motion.div
                                         key={moment.id}
-                                        layout // Adiciona animação suave ao filtrar
+                                        layout 
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
                                         transition={{ duration: 0.2 }}
                                         className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-700 bg-zinc-900"
                                     >
-                                        {moment.type === 'image' ? (
-                                            <img 
-                                                src={moment.src} 
-                                                alt={moment.title} 
-                                                className="w-full h-full object-cover"
-                                                loading="lazy"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-white/50 bg-zinc-900">
-                                                 <div className="flex flex-col items-center gap-2">
-                                                    <FileVideo size={40} className="opacity-50" />
-                                                </div>
-                                            </div>
-                                        )}
+                                        <MediaThumbnail moment={moment} />
 
-                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
+                                        <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 pointer-events-none group-hover:pointer-events-auto">
                                             <div className="flex justify-between items-start">
                                                 <span className="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">
                                                     {moment.category}
                                                 </span>
                                                 <button
                                                     onClick={() => requestDelete(moment)}
-                                                    className="p-1.5 bg-red-600 rounded-full text-white hover:bg-red-700 transition shadow-lg"
+                                                    className="p-1.5 bg-red-600 rounded-full text-white hover:bg-red-700 transition shadow-lg pointer-events-auto"
                                                     title="Excluir"
                                                 >
                                                     <Trash size={14} />
