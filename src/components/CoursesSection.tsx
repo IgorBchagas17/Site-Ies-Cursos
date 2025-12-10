@@ -89,7 +89,7 @@ export function CoursesSection({
           CURSOS EAD (NÃO PROMOVIDOS)
       ================================= */}
       {eadCourses.length > 0 && (
-        <section id="ead-courses" className="py-12 sm:py-20 bg-white"> 
+        <section id="ead-courses" className="py-12 sm:py-20 bg-gray-50"> 
           <div className="container mx-auto px-4">
             {/* TÍTULO */}
             <motion.div
