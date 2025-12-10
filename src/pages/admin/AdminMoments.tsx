@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom"; 
-import { Trash, Upload, Camera, RefreshCcw, MonitorPlay, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter, FileVideo } from "lucide-react"; 
+import { Trash, Upload, Camera, RefreshCcw, Maximize, AlertTriangle, Globe, Trash2, Loader2, Calendar, Search, Filter, FileVideo } from "lucide-react"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Moment } from "../../types";

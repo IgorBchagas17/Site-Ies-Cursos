@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { ArrowLeft, Image, Globe, ExternalLink, MonitorPlay, X, ChevronLeft, ChevronRight, Loader2, Play, Instagram, Youtube, Video } from 'lucide-react'; 
+import { ArrowLeft, Image,ExternalLink, X, ChevronLeft, ChevronRight, Loader2, Play, Instagram, Youtube, Video } from 'lucide-react'; 
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
